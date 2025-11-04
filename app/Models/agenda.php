@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class agenda extends Model
+class Agenda extends Model
 {
     //
 }
