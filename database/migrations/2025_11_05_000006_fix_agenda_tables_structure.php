@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -22,8 +23,18 @@ return new class extends Migration
             });
         }
 
-        // Nota: SQLite no soporta ALTER COLUMN para cambiar nullability
-        // Las columnas ya se manejan como nullable en las migraciones originales
+        // Hacer columnas nullable (PostgreSQL)
+        if (Schema::hasColumn('agendas', 'testimonios')) {
+            DB::statement('ALTER TABLE agendas ALTER COLUMN testimonios DROP NOT NULL');
+        }
+
+        if (Schema::hasColumn('messages', 'orden')) {
+            DB::statement('ALTER TABLE messages ALTER COLUMN orden DROP NOT NULL');
+        }
+
+        if (Schema::hasColumn('asuntos', 'orden')) {
+            DB::statement('ALTER TABLE asuntos ALTER COLUMN orden DROP NOT NULL');
+        }
     }
 
     public function down(): void
