@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
-            $table->integer('orden');
+            $table->integer('orden')->nullable();
             $table->string('tema');
             $table->foreignId('agenda_id')->nullable()->constrained('agendas');
             $table->foreignId('miembro_id')->nullable()->constrained('members');

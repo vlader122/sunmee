@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('asuntos', function (Blueprint $table) {
             $table->id();
-            $table->integer('orden');
+            $table->integer('orden')->nullable();
             $table->string('tipo_asunto');
             $table->string('descripcion');
             $table->foreignId('agenda_id')->nullable()->constrained('agendas');

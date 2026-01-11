@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->date('fecha');
             $table->string('tipo_agenda');
-            $table->text('testimonios');
+            $table->text('testimonios')->nullable();
             $table->foreignId('presidido_por_id')->nullable()->constrained('members');
             $table->foreignId('dirigido_por_id')->nullable()->constrained('members');
             $table->foreignId('pianista_id')->nullable()->constrained('members');
