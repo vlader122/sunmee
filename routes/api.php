@@ -3,6 +3,7 @@
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\HimnController;
 use App\Http\Controllers\MemberController;
+use App\Http\Controllers\WhatsAppController;
 use App\Models\Himn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -14,8 +15,20 @@ Route::get('/user', function (Request $request) {
 Route::get('himnos',[HimnController::class, 'index'] );
 Route::get('himnos/{id}',[HimnController::class, 'show'] );
 Route::get('miembros', [MemberController::class, 'buscar']);
+Route::get('miembros/list', [MemberController::class, 'list']);
+Route::get('miembros/sugerencias', [MemberController::class, 'sugerencias']);
+Route::get('miembros/stats', [MemberController::class, 'stats']);
+Route::post('miembros', [MemberController::class, 'store']);
+Route::put('miembros/{id}', [MemberController::class, 'update']);
+Route::delete('miembros/{id}', [MemberController::class, 'destroy']);
 Route::get('agendas', [AgendaController::class, 'index']);
 Route::get('agendas/{id}', [AgendaController::class, 'show']);
 Route::post('agendas', [AgendaController::class, 'store']);
 Route::put('agendas/{id}', [AgendaController::class, 'update']);
 Route::delete('agendas/{id}', [AgendaController::class, 'destroy']);
+
+// WhatsApp API
+Route::get('whatsapp/status', [WhatsAppController::class, 'status']);
+Route::get('whatsapp/test', [WhatsAppController::class, 'testConnection']);
+Route::post('whatsapp/config', [WhatsAppController::class, 'saveConfig']);
+Route::post('whatsapp/send/{agenda}', [WhatsAppController::class, 'sendNotifications']);

@@ -7,7 +7,9 @@
       "Bash(powershell -Command \"$input | Select-Object -Last 80\")",
       "Bash(powershell -Command \"Get-Content D:\\\\sunmee\\\\storage\\\\logs\\\\laravel.log -Tail 100\")",
       "Bash(php artisan:*)",
-      "Bash(composer require:*)"
+      "Bash(composer require:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)"
     ]
   }
 }

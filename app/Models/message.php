@@ -13,7 +13,19 @@ class Message extends Model
         'agenda_id',
         'miembro_id',
         'discursante_id',
+        'discursante_nombre', // Para invitados, misioneros, etc.
     ];
+
+    /**
+     * Obtener el nombre del discursante (miembro o nombre libre)
+     */
+    public function getNombreDiscursanteAttribute(): ?string
+    {
+        if ($this->discursante) {
+            return $this->discursante->nombre_completo;
+        }
+        return $this->discursante_nombre;
+    }
 
     public function agenda(): BelongsTo
     {

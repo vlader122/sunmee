@@ -50,7 +50,8 @@ class AgendaController extends Controller
 
             'mensajes' => 'present|array',
             'mensajes.*.tema' => 'required|string|max:255',
-            'mensajes.*.discursante_id' => 'required|integer|exists:members,id',
+            'mensajes.*.discursante_id' => 'nullable|integer|exists:members,id',
+            'mensajes.*.discursante_nombre' => 'nullable|string|max:255',
 
             'asuntos' => 'present|array',
             'asuntos.*.descripcion' => 'required|string',
@@ -141,7 +142,8 @@ class AgendaController extends Controller
 
             'mensajes' => 'present|array',
             'mensajes.*.tema' => 'required|string|max:255',
-            'mensajes.*.discursante_id' => 'required|integer|exists:members,id',
+            'mensajes.*.discursante_id' => 'nullable|integer|exists:members,id',
+            'mensajes.*.discursante_nombre' => 'nullable|string|max:255',
 
             'asuntos' => 'present|array',
             'asuntos.*.descripcion' => 'required|string',

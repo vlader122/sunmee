@@ -450,7 +450,12 @@
                 @forelse($agenda->mensajes as $index => $mensaje)
                     <div class="discurso-item">
                         <span style="color: #666; font-size: 10px;">{{ $index + 1 }}.</span>
-                        <span class="discurso-nombre">{{ $mensaje->discursante->nombre_completo ?? '____________________' }}</span>
+                        <span class="discurso-nombre">
+                            {{ $mensaje->discursante->nombre_completo ?? $mensaje->discursante_nombre ?? '____________________' }}
+                            @if($mensaje->discursante_nombre && !$mensaje->discursante_id)
+                                <span style="font-size: 8px; color: #888; font-weight: normal;">(Invitado)</span>
+                            @endif
+                        </span>
                         @if($mensaje->tema)
                             <span class="discurso-tema">- {{ $mensaje->tema }}</span>
                         @else
