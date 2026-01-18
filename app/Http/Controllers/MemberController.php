@@ -58,13 +58,15 @@ class MemberController extends Controller
                 $ultimoDiscurso = Message::where('discursante_id', $miembro->id)
                     ->whereHas('agenda')
                     ->with('agenda:id,fecha')
-                    ->orderByDesc(Agenda::select('fecha')->whereColumn('agendas.id', 'messages.agenda_id'))
+                    ->get()
+                    ->sortByDesc(fn($m) => $m->agenda?->fecha)
                     ->first();
 
                 $ultimaOracion = Pray::where('miembro_id', $miembro->id)
                     ->whereHas('agenda')
                     ->with('agenda:id,fecha')
-                    ->orderByDesc(Agenda::select('fecha')->whereColumn('agendas.id', 'prays.agenda_id'))
+                    ->get()
+                    ->sortByDesc(fn($p) => $p->agenda?->fecha)
                     ->first();
 
                 $fechaUltimoDiscurso = $ultimoDiscurso?->agenda?->fecha;
@@ -186,13 +188,15 @@ class MemberController extends Controller
             $ultimoDiscurso = Message::where('discursante_id', $miembro->id)
                 ->whereHas('agenda')
                 ->with('agenda:id,fecha')
-                ->orderByDesc(Agenda::select('fecha')->whereColumn('agendas.id', 'messages.agenda_id'))
+                ->get()
+                ->sortByDesc(fn($m) => $m->agenda?->fecha)
                 ->first();
 
             $ultimaOracion = Pray::where('miembro_id', $miembro->id)
                 ->whereHas('agenda')
                 ->with('agenda:id,fecha')
-                ->orderByDesc(Agenda::select('fecha')->whereColumn('agendas.id', 'prays.agenda_id'))
+                ->get()
+                ->sortByDesc(fn($p) => $p->agenda?->fecha)
                 ->first();
 
             $fechaUltimoDiscurso = $ultimoDiscurso?->agenda?->fecha;
