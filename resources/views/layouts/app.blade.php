@@ -9,6 +9,8 @@
     @stack('styles')
 </head>
 <body class="bg-gray-100 min-h-screen">
+    <!-- Debug: Si ves esto, el HTML carga pero Vue no -->
+    <noscript>JavaScript está deshabilitado</noscript>
     @yield('content')
     @stack('scripts')
 </body>
