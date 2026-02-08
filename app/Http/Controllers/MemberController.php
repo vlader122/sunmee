@@ -154,71 +154,79 @@ class MemberController extends Controller
     public function sugerencias(Request $request)
     {
         $tipo = $request->query('tipo', 'todos'); // 'discursos', 'oraciones', 'todos'
-        $limite = $request->query('limite', 15);
+        $limite = min($request->query('limite', 10), 10); // Máximo 10 sugerencias
         $tresMesesAtras = Carbon::now()->subMonths(3);
 
-        // Obtener miembros con teléfono válido
+        // Obtener IDs de miembros con participaciones recientes (solo los necesarios)
+        $miembrosConDiscursos = Message::whereHas('agenda', function ($q) use ($tresMesesAtras) {
+                $q->where('fecha', '>=', $tresMesesAtras);
+            })
+            ->selectRaw('discursante_id as miembro_id, COUNT(*) as total')
+            ->groupBy('discursante_id')
+            ->pluck('total', 'miembro_id');
+
+        $miembrosConOraciones = Pray::whereHas('agenda', function ($q) use ($tresMesesAtras) {
+                $q->where('fecha', '>=', $tresMesesAtras);
+            })
+            ->selectRaw('miembro_id, COUNT(*) as total')
+            ->groupBy('miembro_id')
+            ->pluck('total', 'miembro_id');
+
+        // Obtener últimas participaciones
+        $ultimosDiscursos = Message::whereHas('agenda')
+            ->with('agenda:id,fecha')
+            ->orderByDesc(
+                Agenda::select('fecha')
+                    ->whereColumn('agendas.id', 'messages.agenda_id')
+                    ->orderBy('fecha', 'desc')
+                    ->limit(1)
+            )
+            ->get()
+            ->groupBy('discursante_id')
+            ->map(fn($items) => $items->first()->agenda?->fecha);
+
+        $ultimasOraciones = Pray::whereHas('agenda')
+            ->with('agenda:id,fecha')
+            ->orderByDesc(
+                Agenda::select('fecha')
+                    ->whereColumn('agendas.id', 'prays.agenda_id')
+                    ->orderBy('fecha', 'desc')
+                    ->limit(1)
+            )
+            ->get()
+            ->groupBy('miembro_id')
+            ->map(fn($items) => $items->first()->agenda?->fecha);
+
+        // Obtener miembros con teléfono válido - limitado desde la BD
         $miembros = Member::whereNotNull('telefono')
             ->where('telefono', '!=', '')
+            ->whereRaw("telefono REGEXP '^[67][0-9]{7,}$'") // Solo dígitos, empieza con 6 o 7, 8+ caracteres
+            ->limit(100) // Limitar para procesamiento
             ->get()
-            ->filter(function ($m) {
-                $tel = trim($m->telefono);
-                // Validar: solo dígitos, 8+ caracteres, empieza con 6 o 7
-                if (!preg_match('/^\d+$/', $tel)) return false;
-                if (strlen($tel) < 8) return false;
-                if (!in_array($tel[0], ['6', '7'])) return false;
-                return true;
+            ->map(function ($miembro) use ($miembrosConDiscursos, $miembrosConOraciones, $ultimosDiscursos, $ultimasOraciones) {
+                $discursos = $miembrosConDiscursos->get($miembro->id, 0);
+                $oraciones = $miembrosConOraciones->get($miembro->id, 0);
+
+                $fechaUltimoDiscurso = $ultimosDiscursos->get($miembro->id);
+                $fechaUltimaOracion = $ultimasOraciones->get($miembro->id);
+
+                $ultimaParticipacion = null;
+                if ($fechaUltimoDiscurso && $fechaUltimaOracion) {
+                    $ultimaParticipacion = max($fechaUltimoDiscurso, $fechaUltimaOracion);
+                } else {
+                    $ultimaParticipacion = $fechaUltimoDiscurso ?? $fechaUltimaOracion;
+                }
+
+                $miembro->discursos_3m = $discursos;
+                $miembro->oraciones_3m = $oraciones;
+                $miembro->total_3m = $discursos + $oraciones;
+                $miembro->ultima_participacion = $ultimaParticipacion;
+
+                return $miembro;
             });
 
-        // Calcular participaciones para cada miembro
-        $miembrosConParticipacion = $miembros->map(function ($miembro) use ($tresMesesAtras, $tipo) {
-            $discursos = Message::where('discursante_id', $miembro->id)
-                ->whereHas('agenda', function ($q) use ($tresMesesAtras) {
-                    $q->where('fecha', '>=', $tresMesesAtras);
-                })
-                ->count();
-
-            $oraciones = Pray::where('miembro_id', $miembro->id)
-                ->whereHas('agenda', function ($q) use ($tresMesesAtras) {
-                    $q->where('fecha', '>=', $tresMesesAtras);
-                })
-                ->count();
-
-            // Última participación
-            $ultimoDiscurso = Message::where('discursante_id', $miembro->id)
-                ->whereHas('agenda')
-                ->with('agenda:id,fecha')
-                ->get()
-                ->sortByDesc(fn($m) => $m->agenda?->fecha)
-                ->first();
-
-            $ultimaOracion = Pray::where('miembro_id', $miembro->id)
-                ->whereHas('agenda')
-                ->with('agenda:id,fecha')
-                ->get()
-                ->sortByDesc(fn($p) => $p->agenda?->fecha)
-                ->first();
-
-            $fechaUltimoDiscurso = $ultimoDiscurso?->agenda?->fecha;
-            $fechaUltimaOracion = $ultimaOracion?->agenda?->fecha;
-
-            $ultimaParticipacion = null;
-            if ($fechaUltimoDiscurso && $fechaUltimaOracion) {
-                $ultimaParticipacion = max($fechaUltimoDiscurso, $fechaUltimaOracion);
-            } else {
-                $ultimaParticipacion = $fechaUltimoDiscurso ?? $fechaUltimaOracion;
-            }
-
-            $miembro->discursos_3m = $discursos;
-            $miembro->oraciones_3m = $oraciones;
-            $miembro->total_3m = $discursos + $oraciones;
-            $miembro->ultima_participacion = $ultimaParticipacion;
-
-            return $miembro;
-        });
-
         // Ordenar por menor participación (primero los que no han participado)
-        $ordenados = $miembrosConParticipacion->sortBy([
+        $ordenados = $miembros->sortBy([
             ['total_3m', 'asc'],
             ['ultima_participacion', 'asc'],
             ['nombre_completo', 'asc']

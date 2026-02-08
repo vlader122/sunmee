@@ -196,9 +196,9 @@
                                                     'input-warning': esHimnoReciente(himnos[tipo.value].numero),
                                                     'input-error': getHimnosDuplicados().includes(himnos[tipo.value].numero)
                                                 }"
-                                                @update:modelValue="buscarHimno(tipo.value)"
+                                                @blur="buscarHimno(tipo.value)"
                                             />
-                                            <div class="hymn-title">
+                                            <div class="hymn-title" :title="himnos[tipo.value].titulo">
                                                 {{ himnos[tipo.value].titulo || 'Sin seleccionar' }}
                                             </div>
                                         </div>
@@ -936,7 +936,7 @@ async function cargarAgenda() {
             data.himnos.forEach(h => {
                 if (himnos[h.tipo]) {
                     himnos[h.tipo].numero = h.numero;
-                    himnos[h.tipo].titulo = h.titulo;
+                    himnos[h.tipo].titulo = h.titulo || `Himno ${h.numero}`;
                 }
             });
         }

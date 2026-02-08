@@ -304,7 +304,7 @@
                 @endif
             </div>
         </div>
-        
+
         <!-- Himno de Apertura y Primera Oracion -->
         <div class="section">
             @php
@@ -323,23 +323,6 @@
                 <div class="col-2">
                     <span class="label">Primera Oracion:</span>
                     <span class="value">{{ $oracionPrimera->miembro->nombre_completo ?? '________________________________' }}</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Asuntos de Estaca -->
-        <div class="section">
-            <div class="asuntos-estaca">
-                <div class="asuntos-estaca-label">ASUNTOS DE ESTACA</div>
-                <div class="asuntos-estaca-options">
-                    <span class="checkbox-group">
-                        <span class="checkbox"></span>
-                        <span class="checkbox-label">SI</span>
-                    </span>
-                    <span class="checkbox-group">
-                        <span class="checkbox"></span>
-                        <span class="checkbox-label">NO</span>
-                    </span>
                 </div>
             </div>
         </div>
@@ -391,6 +374,23 @@
                             <li class="asuntos-empty-line"></li>
                         @endfor
                     </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Asuntos de Estaca -->
+        <div class="section">
+            <div class="asuntos-estaca">
+                <div class="asuntos-estaca-label">ASUNTOS DE ESTACA</div>
+                <div class="asuntos-estaca-options">
+                    <span class="checkbox-group">
+                        <span class="checkbox"></span>
+                        <span class="checkbox-label">SI</span>
+                    </span>
+                    <span class="checkbox-group">
+                        <span class="checkbox"></span>
+                        <span class="checkbox-label">NO</span>
+                    </span>
                 </div>
             </div>
         </div>
