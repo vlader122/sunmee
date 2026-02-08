@@ -219,6 +219,18 @@
             min-height: 70px;
             background: #fffde7;
         }
+        .testimonios-columns {
+            column-count: 3;
+            column-gap: 15px;
+            column-rule: 1px solid #ddd;
+        }
+        .testimonio-item {
+            break-inside: avoid;
+            padding: 2px 0;
+            border-bottom: 1px dotted #ccc;
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
         .discurso-item {
             padding: 4px 0;
             border-bottom: 1px dotted #ccc;
@@ -417,20 +429,23 @@
             <div class="section">
                 <div class="section-title">Testimonios</div>
                 <div class="testimonios-box">
-                    @if($agenda->testimonios)
-                        @foreach(explode("\n", $agenda->testimonios) as $index => $testimonio)
-                            @if(trim($testimonio))
-                                <div style="padding: 2px 0; border-bottom: 1px dotted #ccc;">{{ $index + 1 }}. {{ trim($testimonio) }}</div>
-                            @endif
-                        @endforeach
-                    @endif
-                    {{-- Agregar lineas en blanco para testimonios --}}
                     @php
-                        $testimoniosCount = $agenda->testimonios ? count(array_filter(explode("\n", $agenda->testimonios))) : 0;
+                        $testimoniosList = $agenda->testimonios ? array_filter(array_map('trim', explode("\n", $agenda->testimonios))) : [];
+                        $testimoniosCount = count($testimoniosList);
                     @endphp
-                    @for($i = $testimoniosCount; $i < 5; $i++)
-                        <div class="asuntos-empty-line"></div>
-                    @endfor
+                    @if($testimoniosCount > 0)
+                        <div class="testimonios-columns">
+                            @foreach($testimoniosList as $index => $testimonio)
+                                <div class="testimonio-item">{{ $index + 1 }}. {{ $testimonio }}</div>
+                            @endforeach
+                        </div>
+                    @endif
+                    {{-- Agregar lineas en blanco si hay pocos testimonios --}}
+                    @if($testimoniosCount < 6)
+                        @for($i = $testimoniosCount; $i < 6; $i++)
+                            <div class="asuntos-empty-line"></div>
+                        @endfor
+                    @endif
                 </div>
             </div>
         @else
