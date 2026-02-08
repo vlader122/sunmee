@@ -166,9 +166,25 @@
                                         v-for="tipo in himnosTipos"
                                         :key="tipo.value"
                                         class="hymn-card"
-                                        :class="{ 'hidden': tipo.value === 'intermedio' && esAyuno }"
+                                        :class="{
+                                            'hidden': tipo.value === 'intermedio' && esAyuno,
+                                            'hymn-repeated': esHimnoReciente(himnos[tipo.value].numero),
+                                            'hymn-duplicate': getHimnosDuplicados().includes(himnos[tipo.value].numero)
+                                        }"
                                     >
-                                        <div class="hymn-label">{{ tipo.label }}</div>
+                                        <div class="hymn-label">
+                                            {{ tipo.label }}
+                                            <i
+                                                v-if="esHimnoReciente(himnos[tipo.value].numero)"
+                                                class="pi pi-exclamation-circle warning-icon"
+                                                v-tooltip.top="`Usado recientemente: ${getHimnoRecienteInfo(himnos[tipo.value].numero)?.fechas.join(', ')}`"
+                                            ></i>
+                                            <i
+                                                v-if="getHimnosDuplicados().includes(himnos[tipo.value].numero)"
+                                                class="pi pi-copy duplicate-icon"
+                                                v-tooltip.top="'Himno duplicado en esta agenda'"
+                                            ></i>
+                                        </div>
                                         <div class="hymn-inputs">
                                             <InputNumber
                                                 v-model="himnos[tipo.value].numero"
@@ -176,6 +192,10 @@
                                                 :max="341"
                                                 placeholder="#"
                                                 class="hymn-number"
+                                                :class="{
+                                                    'input-warning': esHimnoReciente(himnos[tipo.value].numero),
+                                                    'input-error': getHimnosDuplicados().includes(himnos[tipo.value].numero)
+                                                }"
                                                 @update:modelValue="buscarHimno(tipo.value)"
                                             />
                                             <div class="hymn-title">
@@ -183,6 +203,23 @@
                                             </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                            <!-- Resumen de himnos recientes -->
+                            <div v-if="himnosRecientes.length > 0" class="hymns-recent-summary">
+                                <div class="recent-header">
+                                    <i class="pi pi-history"></i>
+                                    <span>Himnos usados en las últimas 8 semanas</span>
+                                </div>
+                                <div class="recent-list">
+                                    <span
+                                        v-for="himno in himnosRecientes.slice(0, 10)"
+                                        :key="himno.numero"
+                                        class="recent-item"
+                                        :class="{ 'recent-repeated': esHimnoReciente(himno.numero) && Object.values(himnos).some(h => h.numero === himno.numero) }"
+                                    >
+                                        #{{ himno.numero }} ({{ himno.usos }})
+                                    </span>
                                 </div>
                             </div>
                         </section>
@@ -481,7 +518,7 @@
                                 icon="pi pi-refresh"
                                 severity="secondary"
                                 outlined
-                                @click="mode === 'edit' ? (location.href = '/agenda/historial') : limpiarFormulario()"
+                                @click="mode === 'edit' ? (window.location.href = '/agenda/historial') : limpiarFormulario()"
                             />
                         </div>
                     </form>
@@ -528,7 +565,7 @@
                         icon="pi pi-list"
                         severity="secondary"
                         outlined
-                        @click="location.href = '/agenda/historial'"
+                        @click="window.location.href = '/agenda/historial'"
                     />
                     <Button
                         :label="mode === 'edit' ? 'Seguir Editando' : 'Crear Nueva'"
@@ -609,6 +646,9 @@ const asuntos = reactive({
     presentaciones: []
 });
 
+// Himnos usados recientemente (últimas 8 semanas)
+const himnosRecientes = ref([]);
+
 // Opciones
 const tiposAgenda = [
     { label: 'Regular', value: null },
@@ -669,6 +709,27 @@ const headerIcon = computed(() => {
     return props.mode === 'edit' ? 'pi pi-pencil' : 'pi pi-calendar-plus';
 });
 
+// Helper: Verificar si un himno fue usado recientemente
+function esHimnoReciente(numero) {
+    if (!numero) return false;
+    return himnosRecientes.value.some(h => h.numero === numero);
+}
+
+// Helper: Obtener información del himno reciente
+function getHimnoRecienteInfo(numero) {
+    if (!numero) return null;
+    return himnosRecientes.value.find(h => h.numero === numero);
+}
+
+// Helper: Verificar si hay himnos duplicados en la agenda actual
+function getHimnosDuplicados() {
+    const numeros = Object.values(himnos)
+        .map(h => h.numero)
+        .filter(n => n !== null && n !== undefined);
+    const duplicados = numeros.filter((item, index) => numeros.indexOf(item) !== index);
+    return [...new Set(duplicados)];
+}
+
 // Metodos
 function verificarFecha() {
     if (!agenda.fecha) return;
@@ -690,6 +751,28 @@ async function buscarHimno(tipo) {
         himnos[tipo].titulo = data.titulo || `Himno ${numero}`;
     } catch {
         himnos[tipo].titulo = `Himno ${numero}`;
+    }
+
+    // Verificar si el himno fue usado recientemente
+    const reciente = getHimnoRecienteInfo(numero);
+    if (reciente) {
+        toast.add({
+            severity: 'warn',
+            summary: 'Himno usado recientemente',
+            detail: `Himno #${numero} ya fue usado el ${reciente.ultimo_uso} (${reciente.usos} vez${reciente.usos > 1 ? 'es' : ''})`,
+            life: 5000
+        });
+    }
+
+    // Verificar duplicados en la agenda actual
+    const duplicados = getHimnosDuplicados();
+    if (duplicados.includes(numero)) {
+        toast.add({
+            severity: 'error',
+            summary: 'Himno duplicado',
+            detail: `El himno #${numero} ya está seleccionado en otra parte de la agenda`,
+            life: 5000
+        });
     }
 }
 
@@ -762,7 +845,7 @@ function confirmarEliminar() {
         accept: async () => {
             try {
                 await del(`/api/agendas/${props.agendaId}`);
-                location.href = '/agenda/historial';
+                window.location.href = '/agenda/historial';
             } catch (error) {
                 toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 5000 });
             }
@@ -814,7 +897,20 @@ function getProximoDomingo() {
 function formatDate(date) {
     if (!date) return null;
     const d = new Date(date);
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+async function cargarHimnosRecientes() {
+    try {
+        const data = await get('/api/agendas/himnos/recientes?semanas=8');
+        himnosRecientes.value = data || [];
+    } catch (error) {
+        console.error('Error cargando himnos recientes:', error);
+        himnosRecientes.value = [];
+    }
 }
 
 async function cargarAgenda() {
@@ -885,6 +981,9 @@ async function cargarAgenda() {
 }
 
 onMounted(() => {
+    // Cargar himnos recientes en ambos modos
+    cargarHimnosRecientes();
+
     if (props.mode === 'create') {
         agenda.fecha = getProximoDomingo();
         verificarFecha();
@@ -1165,6 +1264,86 @@ onMounted(() => {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Indicadores de himnos usados recientemente */
+.hymn-card.hymn-repeated {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+}
+
+.hymn-card.hymn-duplicate {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+}
+
+.hymn-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.warning-icon {
+    color: #f97316;
+    font-size: 0.875rem;
+}
+
+.duplicate-icon {
+    color: #ef4444;
+    font-size: 0.875rem;
+}
+
+.input-warning :deep(input) {
+    border-color: #f97316 !important;
+    background-color: #fff7ed !important;
+}
+
+.input-error :deep(input) {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2 !important;
+}
+
+/* Resumen de himnos recientes */
+.hymns-recent-summary {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.recent-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+}
+
+.recent-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+}
+
+.recent-item {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.5rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.recent-item.recent-repeated {
+    background: #fff7ed;
+    border-color: #fdba74;
+    color: #c2410c;
+    font-weight: 600;
 }
 
 /* Prayers Grid */

@@ -238,6 +238,42 @@ class AgendaController extends Controller
         }
     }
 
+    public function himnosRecientes(Request $request)
+    {
+        // Obtener las últimas 8 semanas por defecto
+        $semanas = $request->input('semanas', 8);
+        $fechaDesde = now()->subWeeks($semanas)->startOfDay();
+
+        $himnos = Agenda::with(['himnos'])
+            ->where('fecha', '>=', $fechaDesde)
+            ->orderBy('fecha', 'desc')
+            ->get()
+            ->flatMap(function ($agenda) {
+                return $agenda->himnos->map(function ($himno) use ($agenda) {
+                    return [
+                        'numero' => $himno->numero,
+                        'titulo' => $himno->titulo,
+                        'tipo' => $himno->tipo,
+                        'fecha' => $agenda->fecha,
+                        'fecha_formateada' => $agenda->fecha->format('d/m/Y'),
+                    ];
+                });
+            })
+            ->groupBy('numero')
+            ->map(function ($grupo) {
+                return [
+                    'numero' => $grupo->first()['numero'],
+                    'titulo' => $grupo->first()['titulo'],
+                    'usos' => $grupo->count(),
+                    'ultimo_uso' => $grupo->first()['fecha_formateada'],
+                    'fechas' => $grupo->pluck('fecha_formateada')->toArray(),
+                ];
+            })
+            ->values();
+
+        return response()->json($himnos);
+    }
+
     public function pdf($id)
     {
         $agenda = Agenda::with(['directorHimno', 'presidido', 'dirigido', 'pianista', 'himnos', 'oraciones.miembro', 'mensajes.discursante', 'asuntos'])

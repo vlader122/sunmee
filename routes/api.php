@@ -26,6 +26,7 @@ Route::get('agendas/{id}', [AgendaController::class, 'show']);
 Route::post('agendas', [AgendaController::class, 'store']);
 Route::put('agendas/{id}', [AgendaController::class, 'update']);
 Route::delete('agendas/{id}', [AgendaController::class, 'destroy']);
+Route::get('agendas/himnos/recientes', [AgendaController::class, 'himnosRecientes']);
 
 // WhatsApp API
 Route::get('whatsapp/status', [WhatsAppController::class, 'status']);

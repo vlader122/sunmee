@@ -290,6 +290,21 @@
             </div>
         </div>
 
+        <!-- Anuncios -->
+        <div class="section">
+            <div class="section-title">Anuncios</div>
+            <div class="anuncios-box">
+                @if($agenda->anuncios)
+                    {!! nl2br(e($agenda->anuncios)) !!}
+                @else
+                    <div class="line-small"></div>
+                    <div class="line-small"></div>
+                    <div class="line-small"></div>
+                    <div class="line-small"></div>
+                @endif
+            </div>
+        </div>
+        
         <!-- Himno de Apertura y Primera Oracion -->
         <div class="section">
             @php
@@ -309,21 +324,6 @@
                     <span class="label">Primera Oracion:</span>
                     <span class="value">{{ $oracionPrimera->miembro->nombre_completo ?? '________________________________' }}</span>
                 </div>
-            </div>
-        </div>
-
-        <!-- Anuncios -->
-        <div class="section">
-            <div class="section-title">Anuncios</div>
-            <div class="anuncios-box">
-                @if($agenda->anuncios)
-                    {!! nl2br(e($agenda->anuncios)) !!}
-                @else
-                    <div class="line-small"></div>
-                    <div class="line-small"></div>
-                    <div class="line-small"></div>
-                    <div class="line-small"></div>
-                @endif
             </div>
         </div>
 
