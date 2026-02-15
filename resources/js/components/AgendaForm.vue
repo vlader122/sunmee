@@ -245,7 +245,12 @@
                                                 v-model="oraciones.primera.miembro_id"
                                                 :initial-member="oraciones.primera.miembro"
                                                 placeholder="Buscar miembro..."
+                                                @member-selected="m => oraciones.primera.participaciones = m?.participaciones || null"
                                             />
+                                            <span v-if="oraciones.primera.participaciones?.oraciones_3m > 0" class="prayer-repeat-badge">
+                                                <i class="pi pi-info-circle"></i>
+                                                {{ oraciones.primera.participaciones.oraciones_3m }} oracion{{ oraciones.primera.participaciones.oraciones_3m > 1 ? 'es' : '' }} en 3 meses
+                                            </span>
                                         </div>
                                     </div>
                                     <div class="prayer-card">
@@ -258,7 +263,12 @@
                                                 v-model="oraciones.ultima.miembro_id"
                                                 :initial-member="oraciones.ultima.miembro"
                                                 placeholder="Buscar miembro..."
+                                                @member-selected="m => oraciones.ultima.participaciones = m?.participaciones || null"
                                             />
+                                            <span v-if="oraciones.ultima.participaciones?.oraciones_3m > 0" class="prayer-repeat-badge">
+                                                <i class="pi pi-info-circle"></i>
+                                                {{ oraciones.ultima.participaciones.oraciones_3m }} oracion{{ oraciones.ultima.participaciones.oraciones_3m > 1 ? 'es' : '' }} en 3 meses
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -627,8 +637,8 @@ const himnos = reactive({
 });
 
 const oraciones = reactive({
-    primera: { miembro_id: null, miembro: null },
-    ultima: { miembro_id: null, miembro: null }
+    primera: { miembro_id: null, miembro: null, participaciones: null },
+    ultima: { miembro_id: null, miembro: null, participaciones: null }
 });
 
 const discursos = ref([
@@ -866,8 +876,8 @@ function resetForm() {
     agenda.pianista = null;
 
     Object.keys(himnos).forEach(k => { himnos[k].numero = null; himnos[k].titulo = ''; });
-    oraciones.primera = { miembro_id: null, miembro: null };
-    oraciones.ultima = { miembro_id: null, miembro: null };
+    oraciones.primera = { miembro_id: null, miembro: null, participaciones: null };
+    oraciones.ultima = { miembro_id: null, miembro: null, participaciones: null };
     discursos.value = [
         { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '' },
         { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '' }
@@ -1385,6 +1395,20 @@ onMounted(() => {
     font-weight: 600;
     color: #64748b;
     margin-bottom: 0.5rem;
+}
+
+.prayer-repeat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.35rem;
+    font-size: 0.7rem;
+    color: #f59e0b;
+    font-weight: 500;
+}
+
+.prayer-repeat-badge i {
+    font-size: 0.7rem;
 }
 
 /* Speeches List */
