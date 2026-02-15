@@ -168,7 +168,6 @@
                                         class="hymn-card"
                                         :class="{
                                             'hidden': tipo.value === 'intermedio' && esAyuno,
-                                            'hymn-repeated': esHimnoReciente(himnos[tipo.value].numero),
                                             'hymn-duplicate': getHimnosDuplicados().includes(himnos[tipo.value].numero)
                                         }"
                                     >
@@ -176,8 +175,8 @@
                                             {{ tipo.label }}
                                             <i
                                                 v-if="esHimnoReciente(himnos[tipo.value].numero)"
-                                                class="pi pi-exclamation-circle warning-icon"
-                                                v-tooltip.top="`Usado recientemente: ${getHimnoRecienteInfo(himnos[tipo.value].numero)?.fechas.join(', ')}`"
+                                                class="pi pi-info-circle recent-info-icon"
+                                                v-tooltip.top="`Usado hace poco: ${getHimnoRecienteInfo(himnos[tipo.value].numero)?.fechas.join(', ')}`"
                                             ></i>
                                             <i
                                                 v-if="getHimnosDuplicados().includes(himnos[tipo.value].numero)"
@@ -193,7 +192,6 @@
                                                 placeholder="#"
                                                 class="hymn-number"
                                                 :class="{
-                                                    'input-warning': esHimnoReciente(himnos[tipo.value].numero),
                                                     'input-error': getHimnosDuplicados().includes(himnos[tipo.value].numero)
                                                 }"
                                                 @blur="buscarHimno(tipo.value)"
@@ -209,7 +207,7 @@
                             <div v-if="himnosRecientes.length > 0" class="hymns-recent-summary">
                                 <div class="recent-header">
                                     <i class="pi pi-history"></i>
-                                    <span>Himnos usados en las últimas 8 semanas</span>
+                                    <span>Himnos usados en las ultimas 4 semanas</span>
                                 </div>
                                 <div class="recent-list">
                                     <span
@@ -753,14 +751,14 @@ async function buscarHimno(tipo) {
         himnos[tipo].titulo = `Himno ${numero}`;
     }
 
-    // Verificar si el himno fue usado recientemente
+    // Informar si el himno fue usado recientemente (solo informativo)
     const reciente = getHimnoRecienteInfo(numero);
     if (reciente) {
         toast.add({
-            severity: 'warn',
-            summary: 'Himno usado recientemente',
-            detail: `Himno #${numero} ya fue usado el ${reciente.ultimo_uso} (${reciente.usos} vez${reciente.usos > 1 ? 'es' : ''})`,
-            life: 5000
+            severity: 'info',
+            summary: 'Nota',
+            detail: `Himno #${numero} se uso el ${reciente.ultimo_uso}`,
+            life: 3000
         });
     }
 
@@ -905,7 +903,7 @@ function formatDate(date) {
 
 async function cargarHimnosRecientes() {
     try {
-        const data = await get('/api/agendas/himnos/recientes?semanas=8');
+        const data = await get('/api/agendas/himnos/recientes?semanas=4');
         himnosRecientes.value = data || [];
     } catch (error) {
         console.error('Error cargando himnos recientes:', error);
@@ -1266,12 +1264,7 @@ onMounted(() => {
     text-overflow: ellipsis;
 }
 
-/* Indicadores de himnos usados recientemente */
-.hymn-card.hymn-repeated {
-    background: #fff7ed;
-    border: 1px solid #fdba74;
-}
-
+/* Indicadores de himnos */
 .hymn-card.hymn-duplicate {
     background: #fef2f2;
     border: 1px solid #fca5a5;
@@ -1283,19 +1276,14 @@ onMounted(() => {
     gap: 0.5rem;
 }
 
-.warning-icon {
-    color: #f97316;
+.recent-info-icon {
+    color: #94a3b8;
     font-size: 0.875rem;
 }
 
 .duplicate-icon {
     color: #ef4444;
     font-size: 0.875rem;
-}
-
-.input-warning :deep(input) {
-    border-color: #f97316 !important;
-    background-color: #fff7ed !important;
 }
 
 .input-error :deep(input) {

@@ -240,8 +240,8 @@ class AgendaController extends Controller
 
     public function himnosRecientes(Request $request)
     {
-        // Obtener las últimas 8 semanas por defecto
-        $semanas = $request->input('semanas', 8);
+        // Obtener las últimas 4 semanas por defecto
+        $semanas = $request->input('semanas', 4);
         $fechaDesde = now()->subWeeks($semanas)->startOfDay();
 
         $himnos = Agenda::with(['himnos'])

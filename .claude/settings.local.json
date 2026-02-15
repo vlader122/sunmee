@@ -10,7 +10,9 @@
       "Bash(composer require:*)",
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)"
     ]
   }
 }
