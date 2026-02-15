@@ -804,7 +804,7 @@ async function guardarAgenda() {
         testimonios: esAyuno.value ? testimonios.value.filter(t => t.trim()).join('\n') : null,
         himnos: Object.entries(himnos)
             .filter(([tipo, h]) => h.numero && (tipo !== 'intermedio' || !esAyuno.value))
-            .map(([tipo, h]) => ({ tipo, numero: h.numero, titulo: h.titulo })),
+            .map(([tipo, h]) => ({ tipo, numero: h.numero, titulo: h.titulo || `Himno ${h.numero}` })),
         oraciones: [
             oraciones.primera.miembro_id && { tipo: 'primera', miembro_id: oraciones.primera.miembro_id },
             oraciones.ultima.miembro_id && { tipo: 'ultima', miembro_id: oraciones.ultima.miembro_id }
