@@ -5,7 +5,7 @@
     <title>Agenda Sacramental</title>
     <style>
         @page {
-            margin: 15px 2cm;
+            margin: 15px 56px;
         }
         * {
             margin: 0;
@@ -19,7 +19,7 @@
             color: #333;
         }
         .container {
-            padding: 5px 15px;
+            padding: 5px 0;
         }
         .header {
             display: table;
