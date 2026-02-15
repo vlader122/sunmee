@@ -918,7 +918,7 @@ async function cargarAgenda() {
     try {
         const data = await get(`/api/agendas/${props.agendaId}`);
 
-        agenda.fecha = data.fecha ? new Date(data.fecha + 'T00:00:00') : null;
+        agenda.fecha = data.fecha ? new Date(data.fecha.split('T')[0] + 'T00:00:00') : null;
         agenda.tipo_agenda_id = data.tipo_agenda_id;
         agenda.anuncios = data.anuncios || '';
         agenda.presidido_por_id = data.presidido_por_id;
