@@ -507,7 +507,7 @@
                                 icon="pi pi-refresh"
                                 severity="secondary"
                                 outlined
-                                @click="mode === 'edit' ? (window.location.href = '/agenda/historial') : limpiarFormulario()"
+                                @click="mode === 'edit' ? irAHistorial() : limpiarFormulario()"
                             />
                         </div>
                     </form>
@@ -551,7 +551,7 @@
                         icon="pi pi-list"
                         severity="secondary"
                         outlined
-                        @click="window.location.href = '/agenda/historial'"
+                        @click="irAHistorial()"
                     />
                     <Button
                         :label="mode === 'edit' ? 'Seguir Editando' : 'Crear Nueva'"
@@ -858,6 +858,10 @@ function confirmarEliminar() {
             }
         }
     });
+}
+
+function irAHistorial() {
+    window.location.href = '/agenda/historial';
 }
 
 function resetForm() {

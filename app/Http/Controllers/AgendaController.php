@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Agenda;
+use App\Models\Himn;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,8 @@ class AgendaController extends Controller
     {
         $agenda = Agenda::with(['directorHimno', 'presidido', 'dirigido', 'pianista', 'himnos', 'oraciones.miembro', 'mensajes.discursante', 'asuntos'])
             ->findOrFail($id);
+
+        $this->resolverTitulosHimnos($agenda);
 
         return response()->json($agenda);
     }
@@ -339,6 +342,8 @@ class AgendaController extends Controller
         $agenda = Agenda::with(['directorHimno', 'presidido', 'dirigido', 'pianista', 'himnos', 'oraciones.miembro', 'mensajes.discursante', 'asuntos'])
             ->findOrFail($id);
 
+        $this->resolverTitulosHimnos($agenda);
+
         $pdf = Pdf::loadView('agenda.pdf', compact('agenda'));
         $pdf->setPaper('letter', 'portrait');
 
@@ -348,10 +353,10 @@ class AgendaController extends Controller
 
     public function pdfActual()
     {
-        // Busca la agenda del domingo más próximo (esta semana o la siguiente)
+        // Domingo (dayOfWeek=0): mostrar hoy. Lunes-Sábado: mostrar el próximo domingo.
         $hoy = now()->startOfDay();
-        $diasHastaDomingo = (7 - $hoy->dayOfWeek) % 7;
-        $domingo = $hoy->copy()->addDays($diasHastaDomingo ?: 7);
+        $diasHastaDomingo = $hoy->dayOfWeek === 0 ? 0 : 7 - $hoy->dayOfWeek;
+        $domingo = $hoy->copy()->addDays($diasHastaDomingo);
 
         // Busca en un rango de ±3 días alrededor del domingo de esta semana
         $agenda = Agenda::with(['directorHimno', 'presidido', 'dirigido', 'pianista', 'himnos', 'oraciones.miembro', 'mensajes.discursante', 'asuntos'])
@@ -363,10 +368,26 @@ class AgendaController extends Controller
             abort(404, 'No hay agenda disponible para esta semana.');
         }
 
+        $this->resolverTitulosHimnos($agenda);
+
         $pdf = Pdf::loadView('agenda.pdf', compact('agenda'));
         $pdf->setPaper('letter', 'portrait');
 
         $fecha = date('Y-m-d', strtotime($agenda->fecha));
         return $pdf->stream("agenda-sacramental-{$fecha}.pdf");
+    }
+
+    private function resolverTitulosHimnos(Agenda $agenda): void
+    {
+        if ($agenda->himnos->isEmpty()) return;
+
+        $numeros = $agenda->himnos->pluck('numero')->filter()->unique();
+        $catalogo = Himn::whereIn('numero', $numeros)->pluck('titulo', 'numero');
+
+        foreach ($agenda->himnos as $himno) {
+            if (empty($himno->titulo) || preg_match('/^Himno \d+$/i', $himno->titulo)) {
+                $himno->titulo = $catalogo->get($himno->numero) ?? $himno->titulo;
+            }
+        }
     }
 }

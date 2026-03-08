@@ -11,8 +11,8 @@ class HimnController extends Controller
         return Himn::all();
     }
 
-    public function show($id) {
-        $himn = Himn::findOrFail($id);
+    public function show($numero) {
+        $himn = Himn::where('numero', $numero)->firstOrFail();
         return $himn;
     }
 }
