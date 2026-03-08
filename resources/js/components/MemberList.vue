@@ -14,6 +14,13 @@
                 </div>
                 <div class="header-buttons">
                     <Button
+                        label="Actualizados"
+                        icon="pi pi-phone"
+                        severity="info"
+                        outlined
+                        @click="abrirTelefonosActualizados"
+                    />
+                    <Button
                         label="Importar Lista"
                         icon="pi pi-upload"
                         severity="secondary"
@@ -491,6 +498,41 @@
             </template>
         </Dialog>
 
+        <!-- Dialog: Teléfonos Actualizados -->
+        <Dialog
+            v-model:visible="showTelefonosDialog"
+            header="Teléfonos Actualizados"
+            modal
+            :style="{ width: '520px' }"
+        >
+            <div v-if="loadingTelefonos" class="text-center py-6">
+                <i class="pi pi-spin pi-spinner text-2xl"></i>
+            </div>
+            <div v-else-if="telefonosActualizados.length === 0" class="text-center py-6 text-gray-400">
+                <i class="pi pi-phone text-3xl mb-2 block"></i>
+                <p>Ningún miembro tiene teléfono registrado aún.</p>
+            </div>
+            <div v-else>
+                <p class="text-sm text-gray-500 mb-3">
+                    {{ telefonosActualizados.length }} miembro(s) con teléfono registrado
+                </p>
+                <div class="tel-list">
+                    <div
+                        v-for="m in telefonosActualizados"
+                        :key="m.id"
+                        class="tel-row"
+                    >
+                        <div class="tel-nombre">{{ m.nombre_completo }}</div>
+                        <div class="tel-numero">{{ m.telefono }}</div>
+                        <div class="tel-fecha">{{ formatFechaTel(m.telefono_updated_at) }}</div>
+                    </div>
+                </div>
+            </div>
+            <template #footer>
+                <Button label="Cerrar" severity="secondary" outlined @click="showTelefonosDialog = false" />
+            </template>
+        </Dialog>
+
         <!-- Confirm Dialog -->
         <ConfirmDialog :pt="{ root: { class: 'confirm-dialog' } }" />
 
@@ -937,6 +979,26 @@ function getPhoneTagIcon(phone) {
 watch([debouncedSearch, activeFilter], () => {
     cardsFirst.value = 0;
 });
+
+// Teléfonos actualizados
+const showTelefonosDialog = ref(false);
+const telefonosActualizados = ref([]);
+const loadingTelefonos = ref(false);
+
+async function abrirTelefonosActualizados() {
+    showTelefonosDialog.value = true;
+    loadingTelefonos.value = true;
+    try {
+        telefonosActualizados.value = await get('/api/miembros/telefonos-actualizados');
+    } finally {
+        loadingTelefonos.value = false;
+    }
+}
+
+function formatFechaTel(fecha) {
+    if (!fecha) return '';
+    return new Date(fecha).toLocaleDateString('es', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
 
 // Cargar al montar
 onMounted(loadMembers);
@@ -1805,4 +1867,28 @@ onMounted(loadMembers);
 }
 .result-stat.added .stat-num { color: #16a34a; }
 .result-stat.skipped .stat-num { color: #94a3b8; }
+
+.tel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.tel-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+}
+
+.tel-nombre { font-weight: 600; color: #1e293b; }
+.tel-numero { color: #6366f1; font-weight: 500; }
+.tel-fecha { color: #94a3b8; font-size: 11px; white-space: nowrap; }
 </style>

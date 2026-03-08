@@ -51,7 +51,11 @@
             </div>
 
             <div class="sidebar-footer">
-                <div class="text-xs text-gray-400 text-center">
+                <a href="/pin/logout" class="lock-btn" title="Bloquear acceso">
+                    <i class="pi pi-lock"></i>
+                    <span>Bloquear</span>
+                </a>
+                <div class="text-xs text-gray-400 text-center mt-2">
                     <p>Agenda Sacramental</p>
                     <p>v1.0 - Vue + PrimeVue</p>
                 </div>
@@ -247,6 +251,24 @@ onMounted(() => {
 .sidebar-footer {
     padding: 1rem;
     border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.lock-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: rgba(255,255,255,0.5);
+    font-size: 13px;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+.lock-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.85);
 }
 
 /* Main Container */

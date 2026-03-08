@@ -19,6 +19,7 @@ Route::get('miembros', [MemberController::class, 'buscar']);
 Route::get('miembros/list', [MemberController::class, 'list']);
 Route::get('miembros/sugerencias', [MemberController::class, 'sugerencias']);
 Route::get('miembros/stats', [MemberController::class, 'stats']);
+Route::get('miembros/telefonos-actualizados', [MemberController::class, 'telefonosActualizados']);
 Route::post('miembros', [MemberController::class, 'store']);
 Route::post('miembros/importar', [MemberController::class, 'importar']);
 Route::post('miembros/importar-pdf', [ImportarMiembrosController::class, 'parsear']);

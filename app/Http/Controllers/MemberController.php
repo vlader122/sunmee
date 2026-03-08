@@ -112,6 +112,16 @@ class MemberController extends Controller
         return response()->json(['total' => $total]);
     }
 
+    public function telefonosActualizados()
+    {
+        $miembros = Member::whereNotNull('telefono_updated_at')
+            ->whereNotNull('telefono')
+            ->orderBy('telefono_updated_at', 'desc')
+            ->get(['id', 'nombre_completo', 'telefono', 'telefono_updated_at']);
+
+        return response()->json($miembros);
+    }
+
     public function update(Request $request, $id)
     {
         $member = Member::findOrFail($id);

@@ -12,5 +12,19 @@ class Member extends Model
         'nombre_completo',
         'telefono',
         'edad',
+        'telefono_updated_at',
     ];
+
+    protected $casts = [
+        'telefono_updated_at' => 'datetime',
+    ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Member $member) {
+            if ($member->isDirty('telefono') && !empty($member->telefono)) {
+                $member->telefono_updated_at = now();
+            }
+        });
+    }
 }

@@ -471,18 +471,13 @@
                                 <span style="font-size: 8px; color: #888; font-weight: normal;">(Invitado)</span>
                             @endif
                         </span>
-                        @if($mensaje->tema)
-                            <span class="discurso-tema">- {{ $mensaje->tema }}</span>
-                        @else
-                            <span class="discurso-tema">- Tema: ____________________</span>
-                        @endif
                     </div>
                 @empty
                     {{-- Lineas vacias para discursos --}}
                     @for($i = 0; $i < 3; $i++)
                         <div class="discurso-item">
                             <span style="color: #666; font-size: 10px;">{{ $i + 1 }}.</span>
-                            <span>____________________ - Tema: ____________________</span>
+                            <span>____________________</span>
                         </div>
                     @endfor
                 @endforelse
@@ -491,7 +486,7 @@
                     @for($i = $agenda->mensajes->count(); $i < 3; $i++)
                         <div class="discurso-item">
                             <span style="color: #666; font-size: 10px;">{{ $i + 1 }}.</span>
-                            <span>____________________ - Tema: ____________________</span>
+                            <span>____________________</span>
                         </div>
                     @endfor
                 @endif
