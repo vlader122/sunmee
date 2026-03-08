@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AgendaController;
 use App\Http\Controllers\HimnController;
+use App\Http\Controllers\ImportarMiembrosController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\WhatsAppController;
 use App\Models\Himn;
@@ -19,6 +20,9 @@ Route::get('miembros/list', [MemberController::class, 'list']);
 Route::get('miembros/sugerencias', [MemberController::class, 'sugerencias']);
 Route::get('miembros/stats', [MemberController::class, 'stats']);
 Route::post('miembros', [MemberController::class, 'store']);
+Route::post('miembros/importar', [MemberController::class, 'importar']);
+Route::post('miembros/importar-pdf', [ImportarMiembrosController::class, 'parsear']);
+Route::post('miembros/importar-pdf/confirmar', [ImportarMiembrosController::class, 'importar']);
 Route::put('miembros/{id}', [MemberController::class, 'update']);
 Route::delete('miembros/{id}', [MemberController::class, 'destroy']);
 Route::get('agendas', [AgendaController::class, 'index']);

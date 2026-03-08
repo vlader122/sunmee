@@ -50,6 +50,7 @@ class AgendaController extends Controller
 
             'mensajes' => 'present|array',
             'mensajes.*.tema' => 'required|string|max:255',
+            'mensajes.*.tiempo' => 'nullable|string|max:50',
             'mensajes.*.discursante_id' => 'nullable|integer|exists:members,id',
             'mensajes.*.discursante_nombre' => 'nullable|string|max:255',
 
@@ -57,6 +58,8 @@ class AgendaController extends Controller
             'asuntos.*.descripcion' => 'required|string',
             'asuntos.*.tipo_asunto' => 'nullable|string',
         ]);
+
+        try { DB::select('SELECT 1'); } catch (\Exception $e) { DB::reconnect(); }
 
         DB::beginTransaction();
 
@@ -142,6 +145,7 @@ class AgendaController extends Controller
 
             'mensajes' => 'present|array',
             'mensajes.*.tema' => 'required|string|max:255',
+            'mensajes.*.tiempo' => 'nullable|string|max:50',
             'mensajes.*.discursante_id' => 'nullable|integer|exists:members,id',
             'mensajes.*.discursante_nombre' => 'nullable|string|max:255',
 
@@ -150,12 +154,23 @@ class AgendaController extends Controller
             'asuntos.*.tipo_asunto' => 'nullable|string',
         ]);
 
+        try { DB::select('SELECT 1'); } catch (\Exception $e) { DB::reconnect(); }
+
         DB::beginTransaction();
 
         try {
-            $agenda = Agenda::findOrFail($id);
+            \Log::info('Paso 1: Validación completada', ['id' => $id, 'validated' => $validatedData]);
+            
+            // Buscar agenda sin fail para controlar el error
+            $agenda = Agenda::find($id);
+            if (!$agenda) {
+                \Log::error('Agenda no encontrada', ['id' => $id]);
+                throw new \Exception("Agenda con ID {$id} no encontrada");
+            }
+            \Log::info('Paso 2: Agenda encontrada', ['id' => $id]);
 
-            $agenda->update([
+            // Actualizar agenda
+            $updateData = [
                 'fecha' => $validatedData['fecha'],
                 'tipo_agenda_id' => $validatedData['tipo_agenda_id'] ?? null,
                 'presidido_por_id' => $validatedData['presidido_por_id'] ?? null,
@@ -164,31 +179,54 @@ class AgendaController extends Controller
                 'director_himno_id' => $validatedData['director_himno_id'],
                 'anuncios' => $validatedData['anuncios'] ?? null,
                 'testimonios' => $validatedData['testimonios'] ?? null,
-            ]);
+            ];
+            \Log::info('Paso 3: Intentando update', ['data' => $updateData]);
+            
+            $agenda->update($updateData);
+            \Log::info('Paso 4: Update completado');
 
-            // Eliminar relaciones anteriores y crear nuevas
+            // Eliminar relaciones anteriores
+            \Log::info('Paso 5: Eliminando himnos');
             $agenda->himnos()->delete();
+            \Log::info('Paso 6: Eliminando oraciones');
             $agenda->oraciones()->delete();
+            \Log::info('Paso 7: Eliminando mensajes');
             $agenda->mensajes()->delete();
+            \Log::info('Paso 8: Eliminando asuntos');
             $agenda->asuntos()->delete();
+            \Log::info('Paso 9: Eliminaciones completadas');
 
+            // Crear nuevas relaciones
             if (!empty($validatedData['himnos'])) {
+                \Log::info('Paso 10: Creando himnos', ['count' => count($validatedData['himnos'])]);
                 $agenda->himnos()->createMany($validatedData['himnos']);
             }
 
             if (!empty($validatedData['oraciones'])) {
+                \Log::info('Paso 11: Creando oraciones', ['count' => count($validatedData['oraciones']), 'data' => $validatedData['oraciones']]);
+                // Verificar que los miembros existan
+                foreach ($validatedData['oraciones'] as $index => $oracion) {
+                    $exists = \App\Models\Member::where('id', $oracion['miembro_id'])->exists();
+                    \Log::info("Verificando miembro oración {$index}", ['miembro_id' => $oracion['miembro_id'], 'exists' => $exists]);
+                    if (!$exists) {
+                        throw new \Exception("El miembro con ID {$oracion['miembro_id']} no existe para la oración");
+                    }
+                }
                 $agenda->oraciones()->createMany($validatedData['oraciones']);
             }
 
             if (!empty($validatedData['mensajes'])) {
+                \Log::info('Paso 12: Creando mensajes', ['count' => count($validatedData['mensajes']), 'data' => $validatedData['mensajes']]);
                 $agenda->mensajes()->createMany($validatedData['mensajes']);
             }
 
             if (!empty($validatedData['asuntos'])) {
+                \Log::info('Paso 13: Creando asuntos', ['count' => count($validatedData['asuntos'])]);
                 $agenda->asuntos()->createMany($validatedData['asuntos']);
             }
 
             DB::commit();
+            \Log::info('Paso 14: Commit completado');
 
             $agenda->load('himnos', 'oraciones', 'mensajes', 'asuntos');
 
@@ -197,9 +235,31 @@ class AgendaController extends Controller
                 'data' => $agenda
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'message' => 'Error de validación.',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Illuminate\Database\QueryException $e) {
+            DB::rollBack();
+            \Log::error('Error SQL al actualizar agenda:', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'sql' => $e->getSql(),
+                'bindings' => $e->getBindings()
+            ]);
+            return response()->json([
+                'message' => 'Error de base de datos al actualizar la agenda.',
+                'error' => $e->getMessage()
+            ], 500);
         } catch (\Exception $e) {
             DB::rollBack();
-
+            \Log::error('Error general al actualizar agenda:', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'message' => 'Error al actualizar la agenda.',
                 'error' => $e->getMessage()
@@ -278,6 +338,30 @@ class AgendaController extends Controller
     {
         $agenda = Agenda::with(['directorHimno', 'presidido', 'dirigido', 'pianista', 'himnos', 'oraciones.miembro', 'mensajes.discursante', 'asuntos'])
             ->findOrFail($id);
+
+        $pdf = Pdf::loadView('agenda.pdf', compact('agenda'));
+        $pdf->setPaper('letter', 'portrait');
+
+        $fecha = date('Y-m-d', strtotime($agenda->fecha));
+        return $pdf->stream("agenda-sacramental-{$fecha}.pdf");
+    }
+
+    public function pdfActual()
+    {
+        // Busca la agenda del domingo más próximo (esta semana o la siguiente)
+        $hoy = now()->startOfDay();
+        $diasHastaDomingo = (7 - $hoy->dayOfWeek) % 7;
+        $domingo = $hoy->copy()->addDays($diasHastaDomingo ?: 7);
+
+        // Busca en un rango de ±3 días alrededor del domingo de esta semana
+        $agenda = Agenda::with(['directorHimno', 'presidido', 'dirigido', 'pianista', 'himnos', 'oraciones.miembro', 'mensajes.discursante', 'asuntos'])
+            ->whereBetween('fecha', [$domingo->copy()->subDays(3), $domingo->copy()->addDays(3)])
+            ->orderBy('fecha', 'asc')
+            ->first();
+
+        if (!$agenda) {
+            abort(404, 'No hay agenda disponible para esta semana.');
+        }
 
         $pdf = Pdf::loadView('agenda.pdf', compact('agenda'));
         $pdf->setPaper('letter', 'portrait');

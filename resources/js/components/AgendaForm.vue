@@ -75,26 +75,6 @@
                 </div>
             </transition>
 
-            <!-- Leyenda de participaciones -->
-            <div class="participation-legend">
-                <span class="legend-item">
-                    <span class="legend-dot bg-green-400"></span>
-                    <span>Disponible</span>
-                </span>
-                <span class="legend-item">
-                    <span class="legend-dot bg-amber-400"></span>
-                    <span>1 participacion</span>
-                </span>
-                <span class="legend-item">
-                    <span class="legend-dot bg-red-400"></span>
-                    <span>2+ participaciones</span>
-                </span>
-                <span class="legend-item text-gray-400">
-                    <i class="pi pi-info-circle"></i>
-                    Ultimos 3 meses
-                </span>
-            </div>
-
             <!-- Layout principal -->
             <div class="main-layout">
                 <!-- Formulario -->
@@ -245,12 +225,7 @@
                                                 v-model="oraciones.primera.miembro_id"
                                                 :initial-member="oraciones.primera.miembro"
                                                 placeholder="Buscar miembro..."
-                                                @member-selected="m => oraciones.primera.participaciones = m?.participaciones || null"
                                             />
-                                            <span v-if="oraciones.primera.participaciones?.oraciones_3m > 0" class="prayer-repeat-badge">
-                                                <i class="pi pi-info-circle"></i>
-                                                {{ oraciones.primera.participaciones.oraciones_3m }} oracion{{ oraciones.primera.participaciones.oraciones_3m > 1 ? 'es' : '' }} en 3 meses
-                                            </span>
                                         </div>
                                     </div>
                                     <div class="prayer-card">
@@ -263,12 +238,7 @@
                                                 v-model="oraciones.ultima.miembro_id"
                                                 :initial-member="oraciones.ultima.miembro"
                                                 placeholder="Buscar miembro..."
-                                                @member-selected="m => oraciones.ultima.participaciones = m?.participaciones || null"
                                             />
-                                            <span v-if="oraciones.ultima.participaciones?.oraciones_3m > 0" class="prayer-repeat-badge">
-                                                <i class="pi pi-info-circle"></i>
-                                                {{ oraciones.ultima.participaciones.oraciones_3m }} oracion{{ oraciones.ultima.participaciones.oraciones_3m > 1 ? 'es' : '' }} en 3 meses
-                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -345,6 +315,17 @@
                                                     <InputText
                                                         v-model="discurso.tema"
                                                         placeholder="Tema del discurso..."
+                                                        class="w-full"
+                                                    />
+                                                </div>
+                                                <div class="speech-field tiempo-field">
+                                                    <label>Tiempo</label>
+                                                    <Select
+                                                        v-model="discurso.tiempo"
+                                                        :options="tiempoOptions"
+                                                        optionLabel="label"
+                                                        optionValue="value"
+                                                        placeholder="Seleccionar tiempo"
                                                         class="w-full"
                                                     />
                                                 </div>
@@ -532,10 +513,7 @@
                     </form>
                 </div>
 
-                <!-- Panel de sugerencias -->
-                <aside class="suggestions-aside">
-                    <SuggestionsPanel />
-                </aside>
+
             </div>
         </div>
 
@@ -596,7 +574,6 @@ import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import AppLayout from './layout/AppLayout.vue';
 import MemberAutocomplete from './MemberAutocomplete.vue';
-import SuggestionsPanel from './SuggestionsPanel.vue';
 
 const props = defineProps({
     mode: { type: String, default: 'create' },
@@ -637,14 +614,23 @@ const himnos = reactive({
 });
 
 const oraciones = reactive({
-    primera: { miembro_id: null, miembro: null, participaciones: null },
-    ultima: { miembro_id: null, miembro: null, participaciones: null }
+    primera: { miembro_id: null, miembro: null },
+    ultima: { miembro_id: null, miembro: null }
 });
 
 const discursos = ref([
-    { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '' },
-    { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '' }
+    { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '', tiempo: '15 minutos' },
+    { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '', tiempo: '15 minutos' }
 ]);
+
+const tiempoOptions = [
+    { label: '5 minutos', value: '5 minutos' },
+    { label: '10 minutos', value: '10 minutos' },
+    { label: '15 minutos', value: '15 minutos' },
+    { label: '20 minutos', value: '20 minutos' },
+    { label: '25 minutos', value: '25 minutos' },
+    { label: '30 minutos', value: '30 minutos' },
+];
 
 const testimonios = ref([]);
 
@@ -683,7 +669,16 @@ const esAyuno = computed(() => agenda.tipo_agenda_id === 1);
 
 const fechaFormateada = computed(() => {
     if (!agenda.fecha) return 'Selecciona una fecha';
-    const date = new Date(agenda.fecha);
+    let date;
+    if (typeof agenda.fecha === 'string') {
+        const fechaStr = agenda.fecha.split('T')[0];
+        const [year, month, day] = fechaStr.split('-').map(Number);
+        date = new Date(year, month - 1, day);
+    } else if (agenda.fecha instanceof Date) {
+        date = agenda.fecha;
+    } else {
+        return 'Fecha inválida';
+    }
     return date.toLocaleDateString('es-ES', {
         weekday: 'long',
         day: 'numeric',
@@ -785,7 +780,7 @@ async function buscarHimno(tipo) {
 }
 
 function agregarDiscurso() {
-    discursos.value.push({ discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '' });
+    discursos.value.push({ discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '', tiempo: '15 minutos' });
 }
 
 function eliminarDiscurso(index) {
@@ -824,13 +819,15 @@ async function guardarAgenda() {
             .map(d => ({
                 discursante_id: d.esInvitado ? null : d.discursante_id,
                 discursante_nombre: d.esInvitado ? d.discursante_nombre.trim() : null,
-                tema: d.tema || 'Sin tema'
+                tema: d.tema || 'Sin tema',
+                tiempo: d.tiempo || '15 minutos'
             })),
         asuntos: Object.entries(asuntos)
             .flatMap(([tipo, items]) => items.filter(i => i.trim()).map(descripcion => ({ tipo_asunto: tipo, descripcion })))
     };
 
     try {
+        console.log('Datos a enviar:', JSON.stringify(data, null, 2));
         if (props.mode === 'edit') {
             await put(`/api/agendas/${props.agendaId}`, data);
         } else {
@@ -838,7 +835,9 @@ async function guardarAgenda() {
         }
         showSuccessDialog.value = true;
     } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 5000 });
+        console.error('Error guardando agenda:', error);
+        const errorMsg = error.data?.message || error.data?.error || error.message || 'Error desconocido';
+        toast.add({ severity: 'error', summary: 'Error', detail: errorMsg, life: 5000 });
     } finally {
         saving.value = false;
     }
@@ -876,11 +875,11 @@ function resetForm() {
     agenda.pianista = null;
 
     Object.keys(himnos).forEach(k => { himnos[k].numero = null; himnos[k].titulo = ''; });
-    oraciones.primera = { miembro_id: null, miembro: null, participaciones: null };
-    oraciones.ultima = { miembro_id: null, miembro: null, participaciones: null };
+    oraciones.primera = { miembro_id: null, miembro: null };
+    oraciones.ultima = { miembro_id: null, miembro: null };
     discursos.value = [
-        { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '' },
-        { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '' }
+        { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '', tiempo: '15 minutos' },
+        { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '', tiempo: '15 minutos' }
     ];
     testimonios.value = [];
     asuntos.relevos = [];
@@ -928,7 +927,7 @@ async function cargarAgenda() {
     try {
         const data = await get(`/api/agendas/${props.agendaId}`);
 
-        agenda.fecha = data.fecha ? new Date(data.fecha.split('T')[0] + 'T00:00:00') : null;
+        agenda.fecha = data.fecha ? new Date(String(data.fecha).split('T')[0] + 'T00:00:00') : null;
         agenda.tipo_agenda_id = data.tipo_agenda_id;
         agenda.anuncios = data.anuncios || '';
         agenda.presidido_por_id = data.presidido_por_id;
@@ -965,7 +964,8 @@ async function cargarAgenda() {
                 discursante: m.discursante,
                 discursante_nombre: m.discursante_nombre || '',
                 esInvitado: !m.discursante_id && !!m.discursante_nombre,
-                tema: m.tema
+                tema: m.tema,
+                tiempo: m.tiempo || '15 minutos'
             }));
         }
 
@@ -1100,45 +1100,13 @@ onMounted(() => {
     text-transform: uppercase;
 }
 
-/* Participation Legend */
-.participation-legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
-    background: #f8fafc;
-    border-radius: 10px;
-    margin-bottom: 1rem;
-    font-size: 0.75rem;
-    color: #64748b;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-}
-
-.legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
-
 /* Main Layout */
 .main-layout {
     display: grid;
-    grid-template-columns: 1fr 320px;
+    grid-template-columns: 1fr;
     gap: 1.5rem;
-}
-
-@media (max-width: 1200px) {
-    .main-layout {
-        grid-template-columns: 1fr;
-    }
-    .suggestions-aside {
-        display: none;
-    }
+    max-width: 900px;
+    margin: 0 auto;
 }
 
 /* Form Container */
@@ -1397,20 +1365,6 @@ onMounted(() => {
     margin-bottom: 0.5rem;
 }
 
-.prayer-repeat-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin-top: 0.35rem;
-    font-size: 0.7rem;
-    color: #f59e0b;
-    font-weight: 500;
-}
-
-.prayer-repeat-badge i {
-    font-size: 0.7rem;
-}
-
 /* Speeches List */
 .speeches-list {
     display: flex;
@@ -1445,13 +1399,31 @@ onMounted(() => {
 .speech-content {
     flex: 1;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr auto;
     gap: 0.75rem;
+    align-items: start;
+}
+
+.speech-content .tiempo-field {
+    min-width: 140px;
+}
+
+@media (max-width: 768px) {
+    .speech-content {
+        grid-template-columns: 1fr 1fr;
+    }
+    .speech-content .tiempo-field {
+        grid-column: span 2;
+        min-width: auto;
+    }
 }
 
 @media (max-width: 640px) {
     .speech-content {
         grid-template-columns: 1fr;
+    }
+    .speech-content .tiempo-field {
+        grid-column: span 1;
     }
 }
 
@@ -1656,13 +1628,6 @@ onMounted(() => {
     .action-primary {
         order: -1;
     }
-}
-
-/* Suggestions Aside */
-.suggestions-aside {
-    position: sticky;
-    top: 80px;
-    height: fit-content;
 }
 
 /* Success Dialog */

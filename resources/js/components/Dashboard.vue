@@ -74,6 +74,11 @@
                             <span>Config. WhatsApp</span>
                             <i class="pi pi-arrow-right ml-auto"></i>
                         </a>
+                        <a href="/cartas/generar" class="action-button">
+                            <i class="pi pi-envelope"></i>
+                            <span>Generar Cartas</span>
+                            <i class="pi pi-arrow-right ml-auto"></i>
+                        </a>
                     </div>
                 </template>
             </Card>
@@ -120,39 +125,6 @@
             </Card>
         </div>
 
-        <!-- Sugerencias -->
-        <Card class="mt-6">
-            <template #title>
-                <div class="flex items-center gap-2">
-                    <i class="pi pi-star text-amber-500"></i>
-                    Miembros Sugeridos
-                    <Tag value="Disponibles" severity="success" class="ml-2" />
-                </div>
-            </template>
-            <template #subtitle>
-                Miembros con telefono valido que no han participado recientemente
-            </template>
-            <template #content>
-                <div v-if="loadingSugerencias" class="text-center py-4">
-                    <ProgressSpinner style="width: 30px; height: 30px" />
-                </div>
-                <div v-else class="member-grid">
-                    <div v-for="miembro in sugerencias" :key="miembro.id" class="member-card">
-                        <div class="member-avatar">
-                            <i class="pi pi-user"></i>
-                        </div>
-                        <p class="member-name" :title="miembro.nombre_completo">
-                            {{ miembro.nombre_completo }}
-                        </p>
-                        <Tag
-                            :value="getParticipacionLabel(miembro)"
-                            :severity="getParticipacionSeverity(miembro)"
-                        />
-                    </div>
-                </div>
-            </template>
-        </Card>
-
         <Toast position="bottom-right" />
     </AppLayout>
 </template>
@@ -170,9 +142,7 @@ const stats = ref({
     totalAgendas: 0
 });
 const ultimasAgendas = ref([]);
-const sugerencias = ref([]);
 const loadingAgendas = ref(true);
-const loadingSugerencias = ref(true);
 const proximaAgenda = ref(null);
 
 const proximaAgendaTexto = computed(() => {
@@ -211,14 +181,6 @@ async function cargarDatos() {
     } catch (error) {
         loadingAgendas.value = false;
     }
-
-    try {
-        const sugRes = await fetch('/api/miembros/sugerencias?limite=12').then(r => r.json());
-        sugerencias.value = Array.isArray(sugRes) ? sugRes : [];
-        loadingSugerencias.value = false;
-    } catch {
-        loadingSugerencias.value = false;
-    }
 }
 
 function validarTelefono(phone) {
@@ -228,7 +190,11 @@ function validarTelefono(phone) {
 }
 
 function formatDate(fecha) {
-    const d = new Date(fecha);
+    // Corregir problema de zona horaria: tomar solo la parte de la fecha
+    const fechaStr = typeof fecha === 'string' ? fecha.split('T')[0] : fecha;
+    const [year, month, day] = fechaStr.split('-').map(Number);
+    // Crear fecha en hora local (meses en JS son 0-based)
+    const d = new Date(year, month - 1, day);
     return d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
@@ -255,20 +221,6 @@ function getAgendaStatus(agenda) {
 
 function getAgendaStatusSeverity(agenda) {
     return { 'Pasada': 'secondary', 'Hoy': 'warn', 'Proxima': 'success' }[getAgendaStatus(agenda)];
-}
-
-function getParticipacionLabel(m) {
-    const total = (m.discursos_3m || 0) + (m.oraciones_3m || 0);
-    if (total === 0) return 'Disponible';
-    const parts = [];
-    if (m.discursos_3m > 0) parts.push(`${m.discursos_3m}D`);
-    if (m.oraciones_3m > 0) parts.push(`${m.oraciones_3m}O`);
-    return parts.join(' ');
-}
-
-function getParticipacionSeverity(m) {
-    const total = (m.discursos_3m || 0) + (m.oraciones_3m || 0);
-    return total === 0 ? 'success' : total >= 2 ? 'danger' : 'warn';
 }
 
 onMounted(cargarDatos);
@@ -418,51 +370,5 @@ onMounted(cargarDatos);
     font-size: 3rem;
     margin-bottom: 0.5rem;
     opacity: 0.5;
-}
-
-/* Member Grid */
-.member-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 1rem;
-}
-
-.member-card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 1rem;
-    background: #f8fafc;
-    border-radius: 10px;
-    transition: all 0.2s;
-}
-
-.member-card:hover {
-    background: #eff6ff;
-    transform: translateY(-2px);
-}
-
-.member-avatar {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    margin-bottom: 0.5rem;
-}
-
-.member-name {
-    font-size: 0.875rem;
-    font-weight: 500;
-    text-align: center;
-    color: #1e293b;
-    margin-bottom: 0.5rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
 }
 </style>

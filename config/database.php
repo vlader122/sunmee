@@ -96,6 +96,10 @@ return [
             'prefix_indexes' => true,
             'search_path' => env('DB_SCHEMA', 'public'), // Permite cambiar el esquema desde .env
             'sslmode' => 'prefer', // Neon prefiere o requiere SSL
+            'options' => [
+                // Required for Neon/PgBouncer: avoids extended query protocol issues in transaction mode
+                PDO::ATTR_EMULATE_PREPARES => true,
+            ],
         ],
 
         'sqlsrv' => [

@@ -578,7 +578,8 @@ function formatDateShort(fecha) {
     let dateStr = fecha;
     if (fecha.includes(' ')) dateStr = fecha.split(' ')[0];
     if (fecha.includes('T')) dateStr = fecha.split('T')[0];
-    const date = new Date(dateStr + 'T12:00:00');
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
     if (isNaN(date.getTime())) return fecha;
     return date.toLocaleDateString('es-ES', {
         weekday: 'long',

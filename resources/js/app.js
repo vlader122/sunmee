@@ -4,7 +4,6 @@ import PrimeVue from 'primevue/config';
 import Aura from '@primevue/themes/aura';
 import ToastService from 'primevue/toastservice';
 import ConfirmationService from 'primevue/confirmationservice';
-import 'primeicons/primeicons.css';
 
 // Componentes PrimeVue
 import AutoComplete from 'primevue/autocomplete';
@@ -31,6 +30,7 @@ import Chip from 'primevue/chip';
 import Badge from 'primevue/badge';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
+import Checkbox from 'primevue/checkbox';
 
 // Componentes personalizados
 import MemberAutocomplete from './components/MemberAutocomplete.vue';
@@ -39,6 +39,7 @@ import AgendaForm from './components/AgendaForm.vue';
 import SuggestionsPanel from './components/SuggestionsPanel.vue';
 import Dashboard from './components/Dashboard.vue';
 import HistorialAgendas from './components/HistorialAgendas.vue';
+import GenerarCartas from './components/GenerarCartas.vue';
 
 // Exportar componentes para uso desde Blade
 window.VueComponents = {
@@ -47,7 +48,8 @@ window.VueComponents = {
     AgendaForm,
     SuggestionsPanel,
     Dashboard,
-    HistorialAgendas
+    HistorialAgendas,
+    GenerarCartas
 };
 
 // Funcion global para montar aplicaciones Vue
@@ -92,6 +94,7 @@ window.createVueApp = function(rootComponent, props = {}) {
     app.component('Badge', Badge);
     app.component('InputGroup', InputGroup);
     app.component('InputGroupAddon', InputGroupAddon);
+    app.component('Checkbox', Checkbox);
 
     return app;
 };

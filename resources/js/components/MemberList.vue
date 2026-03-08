@@ -12,12 +12,21 @@
                         <p>Administra los miembros del barrio y sus datos de contacto</p>
                     </div>
                 </div>
-                <Button
-                    label="Nuevo Miembro"
-                    icon="pi pi-plus"
-                    @click="openAddDialog"
-                    class="add-button"
-                />
+                <div class="header-buttons">
+                    <Button
+                        label="Importar Lista"
+                        icon="pi pi-upload"
+                        severity="secondary"
+                        outlined
+                        @click="showImportDialog = true"
+                    />
+                    <Button
+                        label="Nuevo Miembro"
+                        icon="pi pi-plus"
+                        @click="openAddDialog"
+                        class="add-button"
+                    />
+                </div>
             </div>
 
             <!-- Stats Cards -->
@@ -386,6 +395,102 @@
             </template>
         </Dialog>
 
+        <!-- Import Dialog -->
+        <Dialog
+            v-model:visible="showImportDialog"
+            header="Importar Lista de Miembros (PDF)"
+            modal
+            :style="{ width: '560px' }"
+            @hide="resetImport"
+        >
+            <!-- Paso 1: Subir PDF -->
+            <div v-if="!importPreview && !importResult">
+                <div
+                    class="pdf-drop-zone"
+                    :class="{ 'dragging': isDragging }"
+                    @dragover.prevent="isDragging = true"
+                    @dragleave="isDragging = false"
+                    @drop.prevent="onFileDrop"
+                    @click="$refs.pdfInput.click()"
+                >
+                    <i class="pi pi-file-pdf pdf-drop-icon"></i>
+                    <p class="pdf-drop-title">Sube el PDF de lista de miembros</p>
+                    <p class="pdf-drop-sub">Haz clic o arrastra el archivo aquí</p>
+                    <p class="pdf-drop-hint">Formato: lista oficial de la Iglesia SUD</p>
+                </div>
+                <input ref="pdfInput" type="file" accept=".pdf" class="hidden" @change="onFileSelect" />
+                <p v-if="pdfFile" class="pdf-selected">
+                    <i class="pi pi-file-pdf text-red-500"></i> {{ pdfFile.name }}
+                    <button @click.stop="pdfFile = null" class="pdf-remove">✕</button>
+                </p>
+            </div>
+
+            <!-- Paso 2: Previsualización -->
+            <div v-else-if="importPreview && !importResult">
+                <div class="preview-summary">
+                    <span class="preview-badge new">{{ importPreview.nuevos }} nuevos</span>
+                    <span class="preview-badge existing">{{ importPreview.total - importPreview.nuevos }} ya existen</span>
+                    <span class="preview-total">de {{ importPreview.total }} detectados</span>
+                </div>
+                <div class="preview-list">
+                    <div
+                        v-for="m in importPreview.miembros"
+                        :key="m.nombre_completo"
+                        class="preview-row"
+                        :class="{ 'is-existing': m.existe }"
+                    >
+                        <i :class="m.existe ? 'pi pi-minus-circle text-gray-400' : 'pi pi-plus-circle text-green-500'"></i>
+                        <span class="preview-name">{{ m.nombre_completo }}</span>
+                        <span v-if="m.edad" class="preview-age">{{ m.edad }} años</span>
+                        <span v-if="m.telefono" class="preview-phone">{{ m.telefono }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paso 3: Resultado -->
+            <div v-else-if="importResult" class="import-result">
+                <div class="result-icon" :class="importResult.agregados > 0 ? 'success' : 'neutral'">
+                    <i :class="importResult.agregados > 0 ? 'pi pi-check' : 'pi pi-info-circle'"></i>
+                </div>
+                <p class="result-title">Importación completada</p>
+                <div class="result-stats">
+                    <div class="result-stat added">
+                        <span class="stat-num">{{ importResult.agregados }}</span>
+                        <span class="stat-lbl">Agregados</span>
+                    </div>
+                    <div class="result-stat skipped">
+                        <span class="stat-num">{{ importResult.omitidos }}</span>
+                        <span class="stat-lbl">Ya existían</span>
+                    </div>
+                </div>
+            </div>
+
+            <template #footer>
+                <div class="flex gap-2 justify-end">
+                    <Button label="Cancelar" severity="secondary" outlined @click="showImportDialog = false" />
+                    <Button
+                        v-if="!importPreview && !importResult"
+                        label="Analizar PDF"
+                        icon="pi pi-search"
+                        :loading="importing"
+                        :disabled="!pdfFile"
+                        @click="analizarPDF"
+                    />
+                    <template v-else-if="importPreview && !importResult">
+                        <Button label="Volver" severity="secondary" outlined icon="pi pi-arrow-left" @click="importPreview = null" />
+                        <Button
+                            :label="`Importar ${importPreview.nuevos} nuevos`"
+                            icon="pi pi-upload"
+                            :loading="importing"
+                            :disabled="importPreview.nuevos === 0"
+                            @click="confirmarImport"
+                        />
+                    </template>
+                    <Button v-else label="Cerrar" @click="showImportDialog = false" />
+                </div>
+            </template>
+        </Dialog>
+
         <!-- Confirm Dialog -->
         <ConfirmDialog :pt="{ root: { class: 'confirm-dialog' } }" />
 
@@ -413,6 +518,14 @@ const members = ref([]);
 const searchQuery = ref('');
 const activeFilter = ref('todos');
 const viewMode = ref('table');
+
+// Import
+const showImportDialog = ref(false);
+const pdfFile = ref(null);
+const importing = ref(false);
+const importPreview = ref(null);
+const importResult = ref(null);
+const isDragging = ref(false);
 const showMemberDialog = ref(false);
 const editingMember = ref(null);
 const saving = ref(false);
@@ -562,6 +675,71 @@ function openEditDialog(member) {
     };
     formErrors.value = {};
     showMemberDialog.value = true;
+}
+
+// Import PDF
+function onFileSelect(e) {
+    pdfFile.value = e.target.files[0] || null;
+}
+
+function onFileDrop(e) {
+    isDragging.value = false;
+    const file = e.dataTransfer.files[0];
+    if (file?.type === 'application/pdf') pdfFile.value = file;
+}
+
+async function analizarPDF() {
+    if (!pdfFile.value) return;
+    importing.value = true;
+    try {
+        const formData = new FormData();
+        formData.append('pdf', pdfFile.value);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+        const response = await fetch('/api/miembros/importar-pdf', {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Error al procesar el PDF');
+        importPreview.value = data;
+    } catch (err) {
+        toast.add({ severity: 'error', summary: 'Error', detail: err.message, life: 5000 });
+    } finally {
+        importing.value = false;
+    }
+}
+
+async function confirmarImport() {
+    if (!importPreview.value) return;
+    const nuevos = importPreview.value.miembros.filter(m => !m.existe);
+    if (!nuevos.length) return;
+
+    importing.value = true;
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const response = await fetch('/api/miembros/importar-pdf/confirmar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+            body: JSON.stringify({ miembros: nuevos }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Error al importar');
+        importResult.value = data;
+        if (data.agregados > 0) await loadMembers();
+    } catch (err) {
+        toast.add({ severity: 'error', summary: 'Error', detail: err.message, life: 5000 });
+    } finally {
+        importing.value = false;
+    }
+}
+
+function resetImport() {
+    pdfFile.value = null;
+    importPreview.value = null;
+    importResult.value = null;
+    importing.value = false;
+    isDragging.value = false;
 }
 
 // Cerrar dialog
@@ -1490,4 +1668,141 @@ onMounted(loadMembers);
         grid-template-columns: 1fr;
     }
 }
+
+.header-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* PDF Drop Zone */
+.pdf-drop-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 2.5rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f8fafc;
+}
+.pdf-drop-zone:hover, .pdf-drop-zone.dragging {
+    border-color: #3b82f6;
+    background: #eff6ff;
+}
+.pdf-drop-icon {
+    font-size: 2.5rem;
+    color: #ef4444;
+    display: block;
+    margin-bottom: 0.75rem;
+}
+.pdf-drop-title {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+}
+.pdf-drop-sub {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+.pdf-drop-hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.5rem;
+}
+.pdf-selected {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: #475569;
+}
+.pdf-remove {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    font-size: 0.875rem;
+}
+.pdf-remove:hover { color: #ef4444; }
+
+/* Preview */
+.preview-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+.preview-badge {
+    padding: 0.2rem 0.6rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.preview-badge.new { background: #dcfce7; color: #16a34a; }
+.preview-badge.existing { background: #f1f5f9; color: #64748b; }
+.preview-total { font-size: 0.85rem; color: #94a3b8; }
+.preview-list {
+    max-height: 320px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+.preview-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.875rem;
+}
+.preview-row:last-child { border-bottom: none; }
+.preview-row.is-existing { opacity: 0.45; }
+.preview-name { flex: 1; font-weight: 500; }
+.preview-age { color: #94a3b8; font-size: 0.8rem; }
+.preview-phone { color: #3b82f6; font-size: 0.8rem; }
+
+.import-result {
+    text-align: center;
+    padding: 1rem 0;
+}
+.result-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 0.75rem;
+    font-size: 1.5rem;
+}
+.result-icon.success { background: #dcfce7; color: #16a34a; }
+.result-icon.neutral { background: #f1f5f9; color: #64748b; }
+.result-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+.result-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+.result-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.stat-num {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.stat-lbl {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+.result-stat.added .stat-num { color: #16a34a; }
+.result-stat.skipped .stat-num { color: #94a3b8; }
 </style>

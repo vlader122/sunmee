@@ -10,6 +10,7 @@ class Message extends Model
     protected $fillable = [
         'orden',
         'tema',
+        'tiempo',
         'agenda_id',
         'miembro_id',
         'discursante_id',

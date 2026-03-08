@@ -111,11 +111,21 @@ class WhatsAppController extends Controller
                 continue;
             }
 
-            $text = "Hola {$mensaje->discursante->nombre_completo}, te recordamos que tienes asignado un discurso para la reunión sacramental del {$fecha}.\n\n";
-            if ($mensaje->tema) {
-                $text .= "Tema: {$mensaje->tema}\n\n";
-            }
-            $text .= "Gracias por tu servicio!";
+            $nombre = $mensaje->discursante->nombre_completo;
+            $tema = $mensaje->tema ?: 'Por confirmar';
+
+            $text = "*ASIGNACIÓN DE DISCURSO*\n";
+            $text .= "Barrio Terminal - Estaca Oruro\n\n";
+            $text .= "Hno(a). {$nombre}\n";
+            $text .= "Presente.\n\n";
+            $text .= "El Obispado del Barrio Terminal, en la Estaca Oruro, le saluda cordialmente, esperando que la alegría de vivir el evangelio se refleje en usted y toda su familia.\n\n";
+            $text .= "Se le notifica que ha sido asignado(a) para discursar en la reunión sacramental del día *domingo {$fecha}*, con el tema:\n\n";
+            $text .= "📌 *{$tema}*\n\n";
+            $text .= "Se requiere que esté con 10 minutos de anticipación en el estrado.\n\n";
+            $text .= "Si existiera algún inconveniente, por favor notifique al secretario de barrio al menos 3 días antes de la reunión.\n\n";
+            $text .= "Rogamos que el Señor le prepare y fortalezca para hacer de esta reunión una experiencia espiritual para todos.\n\n";
+            $text .= "Atentamente,\n";
+            $text .= "_El Obispado_";
 
             $result = $service->sendTextMessage($mensaje->discursante->telefono, $text);
 
@@ -143,9 +153,19 @@ class WhatsAppController extends Controller
                 continue;
             }
 
+            $nombre = $oracion->miembro->nombre_completo;
             $tipoOracion = $oracion->tipo === 'primera' ? 'primera' : 'última';
-            $text = "Hola {$oracion->miembro->nombre_completo}, te recordamos que tienes asignada la {$tipoOracion} oración para la reunión sacramental del {$fecha}.\n\n";
-            $text .= "Gracias por tu servicio!";
+
+            $text = "*ASIGNACIÓN DE ORACIÓN*\n";
+            $text .= "Barrio Terminal - Estaca Oruro\n\n";
+            $text .= "Hno(a). {$nombre}\n";
+            $text .= "Presente.\n\n";
+            $text .= "El Obispado del Barrio Terminal, en la Estaca Oruro, le saluda cordialmente.\n\n";
+            $text .= "Se le notifica que ha sido asignado(a) para ofrecer la *{$tipoOracion} oración* en la reunión sacramental del día *domingo {$fecha}*.\n\n";
+            $text .= "Se requiere que esté con 10 minutos de anticipación.\n\n";
+            $text .= "Si existiera algún inconveniente, por favor notifique al secretario de barrio al menos 3 días antes de la reunión.\n\n";
+            $text .= "Atentamente,\n";
+            $text .= "_El Obispado_";
 
             $result = $service->sendTextMessage($oracion->miembro->telefono, $text);
 

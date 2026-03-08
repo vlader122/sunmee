@@ -148,6 +148,37 @@ class MemberController extends Controller
         return response()->json(['message' => 'Miembro eliminado']);
     }
 
+    public function importar(Request $request)
+    {
+        $request->validate([
+            'nombres' => 'required|array|min:1',
+            'nombres.*' => 'required|string|max:255',
+        ]);
+
+        $agregados = [];
+        $omitidos = [];
+
+        foreach ($request->nombres as $nombre) {
+            $nombre = trim($nombre);
+            if (!$nombre) continue;
+
+            $existe = Member::whereRaw('LOWER(nombre_completo) = ?', [strtolower($nombre)])->exists();
+
+            if ($existe) {
+                $omitidos[] = $nombre;
+            } else {
+                Member::create(['nombre_completo' => $nombre]);
+                $agregados[] = $nombre;
+            }
+        }
+
+        return response()->json([
+            'agregados' => count($agregados),
+            'omitidos' => count($omitidos),
+            'nombres_agregados' => $agregados,
+        ]);
+    }
+
     /**
      * Obtener sugerencias de miembros con teléfono válido, ordenados por menor participación
      */
@@ -200,7 +231,7 @@ class MemberController extends Controller
         // Obtener miembros con teléfono válido - limitado desde la BD
         $miembros = Member::whereNotNull('telefono')
             ->where('telefono', '!=', '')
-            ->whereRaw("telefono REGEXP '^[67][0-9]{7,}$'") // Solo dígitos, empieza con 6 o 7, 8+ caracteres
+            ->whereRaw("telefono ~ '^[67][0-9]{7,}$'") // Solo dígitos, empieza con 6 o 7, 8+ caracteres (PostgreSQL)
             ->limit(100) // Limitar para procesamiento
             ->get()
             ->map(function ($miembro) use ($miembrosConDiscursos, $miembrosConOraciones, $ultimosDiscursos, $ultimasOraciones) {
