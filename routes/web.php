@@ -21,7 +21,7 @@ Route::get('/pin', function () {
 Route::post('/pin/verify', function (Request $request) {
     $request->validate(['pin' => 'required|digits:4']);
 
-    if ($request->pin === env('APP_PIN')) {
+    if ($request->pin === config('app.pin')) {
         session(['pin_verified' => true]);
         return redirect(session('intended', '/dashboard'));
     }
