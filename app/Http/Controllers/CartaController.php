@@ -63,7 +63,8 @@ class CartaController extends Controller
 
             // Procesar oraciones
             foreach ($agenda->oraciones as $oracion) {
-                if ($oracion->miembro) {
+                $nombre = $oracion->miembro?->nombre_completo ?? $oracion->orante_nombre;
+                if ($nombre) {
                     $tipoOracion = $this->getTipoOracion($oracion->tipo);
                     $asignaciones[] = [
                         'id' => 'pray_' . $oracion->id,
@@ -72,7 +73,7 @@ class CartaController extends Controller
                         'tipo' => $tipoOracion,
                         'tema' => null,
                         'tiempo' => null,
-                        'destinatario' => $oracion->miembro->nombre_completo,
+                        'destinatario' => $nombre,
                         'tipo_agenda' => $this->getTipoAgenda($agenda->tipo_agenda_id),
                     ];
                 }

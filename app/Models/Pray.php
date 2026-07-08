@@ -11,7 +11,16 @@ class Pray extends Model
         'tipo',
         'agenda_id',
         'miembro_id',
+        'orante_nombre',
     ];
+
+    public function getNombreOranteAttribute(): ?string
+    {
+        if ($this->miembro) {
+            return $this->miembro->nombre_completo;
+        }
+        return $this->orante_nombre;
+    }
 
     public function agenda(): BelongsTo
     {

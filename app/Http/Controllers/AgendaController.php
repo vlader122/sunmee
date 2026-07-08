@@ -49,7 +49,8 @@ class AgendaController extends Controller
 
             'oraciones' => 'present|array',
             'oraciones.*.tipo' => 'required|string',
-            'oraciones.*.miembro_id' => 'required|integer|exists:members,id',
+            'oraciones.*.miembro_id' => 'nullable|integer|exists:members,id',
+            'oraciones.*.orante_nombre' => 'nullable|string|max:255',
 
             'mensajes' => 'present|array',
             'mensajes.*.tema' => 'required|string|max:255',
@@ -144,7 +145,8 @@ class AgendaController extends Controller
 
             'oraciones' => 'present|array',
             'oraciones.*.tipo' => 'required|string',
-            'oraciones.*.miembro_id' => 'required|integer|exists:members,id',
+            'oraciones.*.miembro_id' => 'nullable|integer|exists:members,id',
+            'oraciones.*.orante_nombre' => 'nullable|string|max:255',
 
             'mensajes' => 'present|array',
             'mensajes.*.tema' => 'required|string|max:255',
@@ -207,12 +209,14 @@ class AgendaController extends Controller
 
             if (!empty($validatedData['oraciones'])) {
                 \Log::info('Paso 11: Creando oraciones', ['count' => count($validatedData['oraciones']), 'data' => $validatedData['oraciones']]);
-                // Verificar que los miembros existan
+                // Verificar que los miembros existan (solo si miembro_id no es null)
                 foreach ($validatedData['oraciones'] as $index => $oracion) {
-                    $exists = \App\Models\Member::where('id', $oracion['miembro_id'])->exists();
-                    \Log::info("Verificando miembro oración {$index}", ['miembro_id' => $oracion['miembro_id'], 'exists' => $exists]);
-                    if (!$exists) {
-                        throw new \Exception("El miembro con ID {$oracion['miembro_id']} no existe para la oración");
+                    if ($oracion['miembro_id']) {
+                        $exists = \App\Models\Member::where('id', $oracion['miembro_id'])->exists();
+                        \Log::info("Verificando miembro oración {$index}", ['miembro_id' => $oracion['miembro_id'], 'exists' => $exists]);
+                        if (!$exists) {
+                            throw new \Exception("El miembro con ID {$oracion['miembro_id']} no existe para la oración");
+                        }
                     }
                 }
                 $agenda->oraciones()->createMany($validatedData['oraciones']);

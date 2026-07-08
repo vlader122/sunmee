@@ -334,7 +334,11 @@
                 </div>
                 <div class="col-2">
                     <span class="label">Primera Oracion:</span>
-                    <span class="value">{{ $oracionPrimera->miembro->nombre_completo ?? '________________________________' }}</span>
+                    <span class="value">{{ $oracionPrimera->miembro->nombre_completo ?? $oracionPrimera->orante_nombre ?? '________________________________' }}
+                        @if($oracionPrimera?->orante_nombre && !$oracionPrimera->miembro_id)
+                            <span style="font-size: 8px; color: #888; font-weight: normal;">(Invitado)</span>
+                        @endif
+                    </span>
                 </div>
             </div>
         </div>
@@ -510,7 +514,11 @@
                 </div>
                 <div class="col-2">
                     <span class="label">Ultima Oracion:</span>
-                    <span class="value">{{ $oracionUltima->miembro->nombre_completo ?? '________________________________' }}</span>
+                    <span class="value">{{ $oracionUltima->miembro->nombre_completo ?? $oracionUltima->orante_nombre ?? '________________________________' }}
+                        @if($oracionUltima->orante_nombre && !$oracionUltima->miembro_id)
+                            <span style="font-size: 8px; color: #888; font-weight: normal;">(Invitado)</span>
+                        @endif
+                    </span>
                 </div>
             </div>
         </div>

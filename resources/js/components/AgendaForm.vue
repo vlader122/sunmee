@@ -215,32 +215,86 @@
                             </div>
                             <div class="section-content">
                                 <div class="prayers-grid">
-                                    <div class="prayer-card">
-                                        <div class="prayer-icon first">
-                                            <i class="pi pi-sun"></i>
-                                        </div>
-                                        <div class="prayer-content">
-                                            <label>Primera Oracion</label>
-                                            <MemberAutocomplete
-                                                v-model="oraciones.primera.miembro_id"
-                                                :initial-member="oraciones.primera.miembro"
-                                                placeholder="Buscar miembro..."
-                                            />
+                            <div class="prayer-card">
+                                <div class="prayer-icon first">
+                                    <i class="pi pi-sun"></i>
+                                </div>
+                                <div class="prayer-content">
+                                    <label>Primera Oracion</label>
+                                    <div class="orante-header">
+                                        <div class="orante-toggle">
+                                            <button
+                                                type="button"
+                                                :class="['toggle-btn', { active: !oraciones.primera.esInvitado }]"
+                                                @click="oraciones.primera.esInvitado = false; oraciones.primera.orante_nombre = ''"
+                                            >
+                                                <i class="pi pi-user"></i>
+                                                Miembro
+                                            </button>
+                                            <button
+                                                type="button"
+                                                :class="['toggle-btn', { active: oraciones.primera.esInvitado }]"
+                                                @click="oraciones.primera.esInvitado = true; oraciones.primera.miembro_id = null; oraciones.primera.miembro = null"
+                                            >
+                                                <i class="pi pi-user-plus"></i>
+                                                Invitado
+                                            </button>
                                         </div>
                                     </div>
-                                    <div class="prayer-card">
-                                        <div class="prayer-icon last">
-                                            <i class="pi pi-moon"></i>
-                                        </div>
-                                        <div class="prayer-content">
-                                            <label>Ultima Oracion</label>
-                                            <MemberAutocomplete
-                                                v-model="oraciones.ultima.miembro_id"
-                                                :initial-member="oraciones.ultima.miembro"
-                                                placeholder="Buscar miembro..."
-                                            />
+                                    <MemberAutocomplete
+                                        v-if="!oraciones.primera.esInvitado"
+                                        v-model="oraciones.primera.miembro_id"
+                                        :initial-member="oraciones.primera.miembro"
+                                        placeholder="Buscar miembro..."
+                                    />
+                                    <InputText
+                                        v-else
+                                        v-model="oraciones.primera.orante_nombre"
+                                        placeholder="Nombre del invitado..."
+                                        class="w-full invitado-input"
+                                    />
+                                </div>
+                            </div>
+                            <div class="prayer-card">
+                                <div class="prayer-icon last">
+                                    <i class="pi pi-moon"></i>
+                                </div>
+                                <div class="prayer-content">
+                                    <label>Ultima Oracion</label>
+                                    <div class="orante-header">
+                                        <div class="orante-toggle">
+                                            <button
+                                                type="button"
+                                                :class="['toggle-btn', { active: !oraciones.ultima.esInvitado }]"
+                                                @click="oraciones.ultima.esInvitado = false; oraciones.ultima.orante_nombre = ''"
+                                            >
+                                                <i class="pi pi-user"></i>
+                                                Miembro
+                                            </button>
+                                            <button
+                                                type="button"
+                                                :class="['toggle-btn', { active: oraciones.ultima.esInvitado }]"
+                                                @click="oraciones.ultima.esInvitado = true; oraciones.ultima.miembro_id = null; oraciones.ultima.miembro = null"
+                                            >
+                                                <i class="pi pi-user-plus"></i>
+                                                Invitado
+                                            </button>
                                         </div>
                                     </div>
+                                    <MemberAutocomplete
+                                        v-if="!oraciones.ultima.esInvitado"
+                                        v-model="oraciones.ultima.miembro_id"
+                                        :initial-member="oraciones.ultima.miembro"
+                                        placeholder="Buscar miembro..."
+                                    />
+                                    <InputText
+                                        v-else
+                                        v-model="oraciones.ultima.orante_nombre"
+                                        placeholder="Nombre del invitado..."
+                                        class="w-full invitado-input"
+                                    />
+                                </div>
+                            </div>
                                 </div>
                             </div>
                         </section>
@@ -614,8 +668,8 @@ const himnos = reactive({
 });
 
 const oraciones = reactive({
-    primera: { miembro_id: null, miembro: null },
-    ultima: { miembro_id: null, miembro: null }
+    primera: { miembro_id: null, miembro: null, orante_nombre: '', esInvitado: false },
+    ultima: { miembro_id: null, miembro: null, orante_nombre: '', esInvitado: false }
 });
 
 const discursos = ref([
@@ -811,8 +865,16 @@ async function guardarAgenda() {
             .filter(([tipo, h]) => h.numero && (tipo !== 'intermedio' || !esAyuno.value))
             .map(([tipo, h]) => ({ tipo, numero: h.numero, titulo: h.titulo || `Himno ${h.numero}` })),
         oraciones: [
-            oraciones.primera.miembro_id && { tipo: 'primera', miembro_id: oraciones.primera.miembro_id },
-            oraciones.ultima.miembro_id && { tipo: 'ultima', miembro_id: oraciones.ultima.miembro_id }
+            (oraciones.primera.miembro_id || oraciones.primera.orante_nombre?.trim()) && {
+                tipo: 'primera',
+                miembro_id: oraciones.primera.esInvitado ? null : oraciones.primera.miembro_id,
+                orante_nombre: oraciones.primera.esInvitado ? oraciones.primera.orante_nombre.trim() : null
+            },
+            (oraciones.ultima.miembro_id || oraciones.ultima.orante_nombre?.trim()) && {
+                tipo: 'ultima',
+                miembro_id: oraciones.ultima.esInvitado ? null : oraciones.ultima.miembro_id,
+                orante_nombre: oraciones.ultima.esInvitado ? oraciones.ultima.orante_nombre.trim() : null
+            }
         ].filter(Boolean),
         mensajes: esAyuno.value ? [] : discursos.value
             .filter(d => d.discursante_id || d.discursante_nombre?.trim())
@@ -879,8 +941,8 @@ function resetForm() {
     agenda.pianista = null;
 
     Object.keys(himnos).forEach(k => { himnos[k].numero = null; himnos[k].titulo = ''; });
-    oraciones.primera = { miembro_id: null, miembro: null };
-    oraciones.ultima = { miembro_id: null, miembro: null };
+    oraciones.primera = { miembro_id: null, miembro: null, orante_nombre: '', esInvitado: false };
+    oraciones.ultima = { miembro_id: null, miembro: null, orante_nombre: '', esInvitado: false };
     discursos.value = [
         { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '', tiempo: '15 minutos' },
         { discursante_id: null, discursante: null, discursante_nombre: '', esInvitado: false, tema: '', tiempo: '15 minutos' }
@@ -955,9 +1017,19 @@ async function cargarAgenda() {
         if (data.oraciones) {
             data.oraciones.forEach(o => {
                 if (o.tipo === 'primera') {
-                    oraciones.primera = { miembro_id: o.miembro_id, miembro: o.miembro };
+                    oraciones.primera = {
+                        miembro_id: o.miembro_id,
+                        miembro: o.miembro,
+                        orante_nombre: o.orante_nombre || '',
+                        esInvitado: !o.miembro_id && !!o.orante_nombre
+                    };
                 } else if (o.tipo === 'ultima') {
-                    oraciones.ultima = { miembro_id: o.miembro_id, miembro: o.miembro };
+                    oraciones.ultima = {
+                        miembro_id: o.miembro_id,
+                        miembro: o.miembro,
+                        orante_nombre: o.orante_nombre || '',
+                        esInvitado: !o.miembro_id && !!o.orante_nombre
+                    };
                 }
             });
         }
@@ -1367,6 +1439,47 @@ onMounted(() => {
     font-weight: 600;
     color: #64748b;
     margin-bottom: 0.5rem;
+}
+
+.orante-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+}
+
+.orante-toggle {
+    display: flex;
+    background: #e2e8f0;
+    border-radius: 6px;
+    padding: 2px;
+}
+
+.orante-toggle .toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border: none;
+    background: transparent;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.orante-toggle .toggle-btn i {
+    font-size: 0.7rem;
+}
+
+.orante-toggle .toggle-btn:hover {
+    color: #475569;
+}
+
+.orante-toggle .toggle-btn.active {
+    background: white;
+    color: #8b5cf6;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Speeches List */

@@ -147,7 +147,7 @@ class WhatsAppController extends Controller
             if (!$oracion->miembro || !$oracion->miembro->telefono) {
                 $results['skipped'][] = [
                     'tipo' => 'oracion',
-                    'nombre' => $oracion->miembro?->nombre_completo ?? 'Sin asignar',
+                    'nombre' => $oracion->miembro?->nombre_completo ?? $oracion->orante_nombre ?? 'Sin asignar',
                     'reason' => 'Sin teléfono',
                 ];
                 continue;

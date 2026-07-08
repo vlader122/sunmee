@@ -299,7 +299,9 @@
                             </div>
                             <div class="prayer-info">
                                 <span class="prayer-label">{{ oracion.tipo === 'primera' ? 'Primera' : 'Ultima' }} Oracion</span>
-                                <span class="prayer-name">{{ oracion.miembro?.nombre_completo || 'Sin asignar' }}</span>
+                                <span class="prayer-name">{{ oracion.miembro?.nombre_completo || oracion.orante_nombre || 'Sin asignar' }}
+                                    <Tag v-if="oracion.orante_nombre && !oracion.miembro_id" value="Invitado" severity="warn" style="font-size: 0.6rem; padding: 0.1rem 0.3rem; margin-left: 0.5rem;" />
+                                </span>
                             </div>
                         </div>
                     </div>
