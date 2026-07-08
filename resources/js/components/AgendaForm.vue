@@ -168,7 +168,7 @@
                                             <InputNumber
                                                 v-model="himnos[tipo.value].numero"
                                                 :min="1"
-                                                :max="341"
+                                                :max="1500"
                                                 placeholder="#"
                                                 class="hymn-number"
                                                 :class="{
