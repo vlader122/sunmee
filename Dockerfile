@@ -1,14 +1,15 @@
+# 1. Declarar la imagen de composer como una etapa con un nombre
+FROM composer:latest AS composer_stage
+
 # ==========================================
 # ETAPA 1: Compilar assets de Vue (Frontend)
 # ==========================================
 FROM node:20-alpine AS node_builder
 WORKDIR /app
 
-# Copiar archivos de dependencias de Node
 COPY package*.json ./
 RUN npm ci
 
-# Copiar el proyecto y compilar Vue/CSS
 COPY . .
 RUN npm run build
 
@@ -17,7 +18,6 @@ RUN npm run build
 # ==========================================
 FROM php:8.2-fpm-alpine
 
-# Instalar extensiones de PHP comunes y Nginx
 RUN apk add --no-cache \
     nginx \
     git \
@@ -29,21 +29,17 @@ RUN apk add --no-cache \
     unzip \
     && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd
 
-# Copiar Composer desde la imagen oficial
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# 2. Ahora apuntas a la etapa declarada 'composer_stage'
+COPY --from=composer_stage /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-# Copiar código fuente
 COPY . .
 
-# Copiar los assets de Vue ya compilados en la ETAPA 1 a la carpeta public
 COPY --from=node_builder /app/public/build ./public/build
 
-# Instalar dependencias de PHP (sin entorno de desarrollo)
 RUN composer install --no-dev --optimize-autoloader
 
-# Configuración básica de Nginx para el monolito
 RUN echo 'server { \
     listen 80; \
     index index.php index.html; \
@@ -59,6 +55,5 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/http.d/default.conf
 
-# Script de arranque para ejecutar Nginx y PHP-FPM juntos
 EXPOSE 80
 CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
