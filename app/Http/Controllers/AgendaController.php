@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Agenda;
 use App\Models\Himn;
+use App\Models\Member;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -63,7 +65,11 @@ class AgendaController extends Controller
             'asuntos.*.tipo_asunto' => 'nullable|string',
         ]);
 
-        try { DB::select('SELECT 1'); } catch (\Exception $e) { DB::reconnect(); }
+        try {
+            DB::select('SELECT 1');
+        } catch (\Exception $e) {
+            DB::reconnect();
+        }
 
         DB::beginTransaction();
 
@@ -82,20 +88,20 @@ class AgendaController extends Controller
             // 4. Crear los registros "Hijos" usando la relación
             // El método createMany() es perfecto para esto.
             // Automáticamente asignará el 'agenda_sacramental_id'
-            
-            if (!empty($validatedData['himnos'])) {
+
+            if (! empty($validatedData['himnos'])) {
                 $agenda->himnos()->createMany($validatedData['himnos']);
             }
-            
-            if (!empty($validatedData['oraciones'])) {
+
+            if (! empty($validatedData['oraciones'])) {
                 $agenda->oraciones()->createMany($validatedData['oraciones']);
             }
 
-            if (!empty($validatedData['mensajes'])) {
+            if (! empty($validatedData['mensajes'])) {
                 $agenda->mensajes()->createMany($validatedData['mensajes']);
             }
 
-            if (!empty($validatedData['asuntos'])) {
+            if (! empty($validatedData['asuntos'])) {
                 $agenda->asuntos()->createMany($validatedData['asuntos']);
             }
 
@@ -107,12 +113,13 @@ class AgendaController extends Controller
 
             return response()->json([
                 'message' => 'Agenda y detalles creados exitosamente.',
-                'data' => $agenda
+                'data' => $agenda,
             ], 201);
 
         } catch (ValidationException $e) {
             // Si la validación falla (aunque ya la hicimos, es una doble seguridad)
             DB::rollBack();
+
             return response()->json(['errors' => $e->errors()], 422);
 
         } catch (\Exception $e) {
@@ -121,7 +128,7 @@ class AgendaController extends Controller
 
             return response()->json([
                 'message' => 'Error al crear la agenda.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -159,16 +166,20 @@ class AgendaController extends Controller
             'asuntos.*.tipo_asunto' => 'nullable|string',
         ]);
 
-        try { DB::select('SELECT 1'); } catch (\Exception $e) { DB::reconnect(); }
+        try {
+            DB::select('SELECT 1');
+        } catch (\Exception $e) {
+            DB::reconnect();
+        }
 
         DB::beginTransaction();
 
         try {
             \Log::info('Paso 1: Validación completada', ['id' => $id, 'validated' => $validatedData]);
-            
+
             // Buscar agenda sin fail para controlar el error
             $agenda = Agenda::find($id);
-            if (!$agenda) {
+            if (! $agenda) {
                 \Log::error('Agenda no encontrada', ['id' => $id]);
                 throw new \Exception("Agenda con ID {$id} no encontrada");
             }
@@ -186,7 +197,7 @@ class AgendaController extends Controller
                 'testimonios' => $validatedData['testimonios'] ?? null,
             ];
             \Log::info('Paso 3: Intentando update', ['data' => $updateData]);
-            
+
             $agenda->update($updateData);
             \Log::info('Paso 4: Update completado');
 
@@ -202,19 +213,19 @@ class AgendaController extends Controller
             \Log::info('Paso 9: Eliminaciones completadas');
 
             // Crear nuevas relaciones
-            if (!empty($validatedData['himnos'])) {
+            if (! empty($validatedData['himnos'])) {
                 \Log::info('Paso 10: Creando himnos', ['count' => count($validatedData['himnos'])]);
                 $agenda->himnos()->createMany($validatedData['himnos']);
             }
 
-            if (!empty($validatedData['oraciones'])) {
+            if (! empty($validatedData['oraciones'])) {
                 \Log::info('Paso 11: Creando oraciones', ['count' => count($validatedData['oraciones']), 'data' => $validatedData['oraciones']]);
                 // Verificar que los miembros existan (solo si miembro_id no es null)
                 foreach ($validatedData['oraciones'] as $index => $oracion) {
                     if ($oracion['miembro_id']) {
-                        $exists = \App\Models\Member::where('id', $oracion['miembro_id'])->exists();
+                        $exists = Member::where('id', $oracion['miembro_id'])->exists();
                         \Log::info("Verificando miembro oración {$index}", ['miembro_id' => $oracion['miembro_id'], 'exists' => $exists]);
-                        if (!$exists) {
+                        if (! $exists) {
                             throw new \Exception("El miembro con ID {$oracion['miembro_id']} no existe para la oración");
                         }
                     }
@@ -222,12 +233,12 @@ class AgendaController extends Controller
                 $agenda->oraciones()->createMany($validatedData['oraciones']);
             }
 
-            if (!empty($validatedData['mensajes'])) {
+            if (! empty($validatedData['mensajes'])) {
                 \Log::info('Paso 12: Creando mensajes', ['count' => count($validatedData['mensajes']), 'data' => $validatedData['mensajes']]);
                 $agenda->mensajes()->createMany($validatedData['mensajes']);
             }
 
-            if (!empty($validatedData['asuntos'])) {
+            if (! empty($validatedData['asuntos'])) {
                 \Log::info('Paso 13: Creando asuntos', ['count' => count($validatedData['asuntos'])]);
                 $agenda->asuntos()->createMany($validatedData['asuntos']);
             }
@@ -239,37 +250,40 @@ class AgendaController extends Controller
 
             return response()->json([
                 'message' => 'Agenda actualizada exitosamente.',
-                'data' => $agenda
+                'data' => $agenda,
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             DB::rollBack();
+
             return response()->json([
                 'message' => 'Error de validación.',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             DB::rollBack();
             \Log::error('Error SQL al actualizar agenda:', [
                 'id' => $id,
                 'error' => $e->getMessage(),
                 'sql' => $e->getSql(),
-                'bindings' => $e->getBindings()
+                'bindings' => $e->getBindings(),
             ]);
+
             return response()->json([
                 'message' => 'Error de base de datos al actualizar la agenda.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error general al actualizar agenda:', [
                 'id' => $id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
+
             return response()->json([
                 'message' => 'Error al actualizar la agenda.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -292,7 +306,7 @@ class AgendaController extends Controller
             DB::commit();
 
             return response()->json([
-                'message' => 'Agenda eliminada exitosamente.'
+                'message' => 'Agenda eliminada exitosamente.',
             ]);
 
         } catch (\Exception $e) {
@@ -300,7 +314,7 @@ class AgendaController extends Controller
 
             return response()->json([
                 'message' => 'Error al eliminar la agenda.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -352,6 +366,7 @@ class AgendaController extends Controller
         $pdf->setPaper('letter', 'portrait');
 
         $fecha = date('Y-m-d', strtotime($agenda->fecha));
+
         return $pdf->stream("agenda-sacramental-{$fecha}.pdf");
     }
 
@@ -368,7 +383,7 @@ class AgendaController extends Controller
             ->orderBy('fecha', 'asc')
             ->first();
 
-        if (!$agenda) {
+        if (! $agenda) {
             abort(404, 'No hay agenda disponible para esta semana.');
         }
 
@@ -378,12 +393,15 @@ class AgendaController extends Controller
         $pdf->setPaper('letter', 'portrait');
 
         $fecha = date('Y-m-d', strtotime($agenda->fecha));
+
         return $pdf->stream("agenda-sacramental-{$fecha}.pdf");
     }
 
     private function resolverTitulosHimnos(Agenda $agenda): void
     {
-        if ($agenda->himnos->isEmpty()) return;
+        if ($agenda->himnos->isEmpty()) {
+            return;
+        }
 
         $numeros = $agenda->himnos->pluck('numero')->filter()->unique();
         $catalogo = Himn::whereIn('numero', $numeros)->pluck('titulo', 'numero');

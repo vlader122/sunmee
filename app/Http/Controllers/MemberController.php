@@ -2,27 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Agenda;
 use App\Models\Member;
 use App\Models\Message;
 use App\Models\Pray;
-use App\Models\Agenda;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class MemberController extends Controller
 {
-    public function index() {
+    public function index()
+    {
         return Member::all();
     }
 
-    public function show($id) {
+    public function show($id)
+    {
         $himn = Member::findOrFail($id);
+
         return $himn;
     }
+
     public function buscar(Request $request)
     {
         $request->validate([
-            'nombre' => 'sometimes|string|max:100'
+            'nombre' => 'sometimes|string|max:100',
         ]);
 
         $terminoBusqueda = $request->query('nombre');
@@ -31,7 +35,7 @@ class MemberController extends Controller
         $query = Member::query();
 
         if ($terminoBusqueda) {
-            $query->whereRaw('LOWER(nombre_completo) LIKE ?', ['%' . strtolower($terminoBusqueda) . '%']);
+            $query->whereRaw('LOWER(nombre_completo) LIKE ?', ['%'.strtolower($terminoBusqueda).'%']);
         }
 
         $miembros = $query->limit(10)->get();
@@ -59,14 +63,14 @@ class MemberController extends Controller
                     ->whereHas('agenda')
                     ->with('agenda:id,fecha')
                     ->get()
-                    ->sortByDesc(fn($m) => $m->agenda?->fecha)
+                    ->sortByDesc(fn ($m) => $m->agenda?->fecha)
                     ->first();
 
                 $ultimaOracion = Pray::where('miembro_id', $miembro->id)
                     ->whereHas('agenda')
                     ->with('agenda:id,fecha')
                     ->get()
-                    ->sortByDesc(fn($p) => $p->agenda?->fecha)
+                    ->sortByDesc(fn ($p) => $p->agenda?->fecha)
                     ->first();
 
                 $fechaUltimoDiscurso = $ultimoDiscurso?->agenda?->fecha;
@@ -100,7 +104,7 @@ class MemberController extends Controller
         $query = Member::query()->orderBy('nombre_completo');
 
         if ($search) {
-            $query->whereRaw('LOWER(nombre_completo) LIKE ?', ['%' . strtolower($search) . '%']);
+            $query->whereRaw('LOWER(nombre_completo) LIKE ?', ['%'.strtolower($search).'%']);
         }
 
         return response()->json($query->paginate($perPage));
@@ -109,6 +113,7 @@ class MemberController extends Controller
     public function stats()
     {
         $total = Member::count();
+
         return response()->json(['total' => $total]);
     }
 
@@ -170,7 +175,9 @@ class MemberController extends Controller
 
         foreach ($request->nombres as $nombre) {
             $nombre = trim($nombre);
-            if (!$nombre) continue;
+            if (! $nombre) {
+                continue;
+            }
 
             $existe = Member::whereRaw('LOWER(nombre_completo) = ?', [strtolower($nombre)])->exists();
 
@@ -200,15 +207,15 @@ class MemberController extends Controller
 
         // Obtener IDs de miembros con participaciones recientes (solo los necesarios)
         $miembrosConDiscursos = Message::whereHas('agenda', function ($q) use ($tresMesesAtras) {
-                $q->where('fecha', '>=', $tresMesesAtras);
-            })
+            $q->where('fecha', '>=', $tresMesesAtras);
+        })
             ->selectRaw('discursante_id as miembro_id, COUNT(*) as total')
             ->groupBy('discursante_id')
             ->pluck('total', 'miembro_id');
 
         $miembrosConOraciones = Pray::whereHas('agenda', function ($q) use ($tresMesesAtras) {
-                $q->where('fecha', '>=', $tresMesesAtras);
-            })
+            $q->where('fecha', '>=', $tresMesesAtras);
+        })
             ->selectRaw('miembro_id, COUNT(*) as total')
             ->groupBy('miembro_id')
             ->pluck('total', 'miembro_id');
@@ -224,7 +231,7 @@ class MemberController extends Controller
             )
             ->get()
             ->groupBy('discursante_id')
-            ->map(fn($items) => $items->first()->agenda?->fecha);
+            ->map(fn ($items) => $items->first()->agenda?->fecha);
 
         $ultimasOraciones = Pray::whereHas('agenda')
             ->with('agenda:id,fecha')
@@ -236,7 +243,7 @@ class MemberController extends Controller
             )
             ->get()
             ->groupBy('miembro_id')
-            ->map(fn($items) => $items->first()->agenda?->fecha);
+            ->map(fn ($items) => $items->first()->agenda?->fecha);
 
         // Obtener miembros con teléfono válido - limitado desde la BD
         $miembros = Member::whereNotNull('telefono')
@@ -270,7 +277,7 @@ class MemberController extends Controller
         $ordenados = $miembros->sortBy([
             ['total_3m', 'asc'],
             ['ultima_participacion', 'asc'],
-            ['nombre_completo', 'asc']
+            ['nombre_completo', 'asc'],
         ])->take($limite);
 
         return response()->json($ordenados->values());

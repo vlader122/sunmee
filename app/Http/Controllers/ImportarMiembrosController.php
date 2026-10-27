@@ -17,9 +17,9 @@ class ImportarMiembrosController extends Controller
             'pdf' => 'required|file|mimes:pdf|max:10240',
         ]);
 
-        $parser = new Parser();
-        $pdf    = $parser->parseFile($request->file('pdf')->getPathname());
-        $texto  = $pdf->getText();
+        $parser = new Parser;
+        $pdf = $parser->parseFile($request->file('pdf')->getPathname());
+        $texto = $pdf->getText();
 
         $miembros = $this->extraerMiembros($texto);
 
@@ -36,8 +36,8 @@ class ImportarMiembrosController extends Controller
 
         return response()->json([
             'miembros' => $miembros,
-            'total'    => count($miembros),
-            'nuevos'   => count(array_filter($miembros, fn($m) => !$m['existe'])),
+            'total' => count($miembros),
+            'nuevos' => count(array_filter($miembros, fn ($m) => ! $m['existe'])),
         ]);
     }
 
@@ -47,14 +47,14 @@ class ImportarMiembrosController extends Controller
     public function importar(Request $request)
     {
         $request->validate([
-            'miembros'                     => 'required|array|min:1',
-            'miembros.*.nombre_completo'   => 'required|string|max:255',
-            'miembros.*.edad'              => 'nullable|integer|min:0|max:120',
-            'miembros.*.telefono'          => 'nullable|string|max:30',
+            'miembros' => 'required|array|min:1',
+            'miembros.*.nombre_completo' => 'required|string|max:255',
+            'miembros.*.edad' => 'nullable|integer|min:0|max:120',
+            'miembros.*.telefono' => 'nullable|string|max:30',
         ]);
 
         $agregados = 0;
-        $omitidos  = 0;
+        $omitidos = 0;
 
         foreach ($request->miembros as $datos) {
             $existe = Member::whereRaw('LOWER(nombre_completo) = ?', [strtolower($datos['nombre_completo'])])->exists();
@@ -64,8 +64,8 @@ class ImportarMiembrosController extends Controller
             } else {
                 Member::create([
                     'nombre_completo' => $datos['nombre_completo'],
-                    'edad'            => $datos['edad'] ?? null,
-                    'telefono'        => $datos['telefono'] ?? null,
+                    'edad' => $datos['edad'] ?? null,
+                    'telefono' => $datos['telefono'] ?? null,
                 ]);
                 $agregados++;
             }
@@ -73,7 +73,7 @@ class ImportarMiembrosController extends Controller
 
         return response()->json([
             'agregados' => $agregados,
-            'omitidos'  => $omitidos,
+            'omitidos' => $omitidos,
         ]);
     }
 
@@ -86,11 +86,13 @@ class ImportarMiembrosController extends Controller
     private function extraerMiembros(string $texto): array
     {
         $miembros = [];
-        $lineas   = preg_split('/\r?\n/', $texto);
+        $lineas = preg_split('/\r?\n/', $texto);
 
         foreach ($lineas as $linea) {
             $linea = trim($linea);
-            if (strlen($linea) < 5) continue;
+            if (strlen($linea) < 5) {
+                continue;
+            }
 
             $miembro = $this->parsearLinea($linea);
             if ($miembro) {
@@ -114,19 +116,25 @@ class ImportarMiembrosController extends Controller
         $partes = explode("\t", $linea, 2);
 
         $nombreRaw = trim($partes[0]);
-        $resto     = isset($partes[1]) ? trim($partes[1]) : '';
+        $resto = isset($partes[1]) ? trim($partes[1]) : '';
 
         // El nombre debe contener una coma (Apellido, Nombre)
-        if (!str_contains($nombreRaw, ',')) return null;
+        if (! str_contains($nombreRaw, ',')) {
+            return null;
+        }
 
         // Descartar encabezados y pies de página
-        if ($this->esEncabezado($nombreRaw)) return null;
+        if ($this->esEncabezado($nombreRaw)) {
+            return null;
+        }
 
         $nombre = $this->limpiarNombre($nombreRaw);
-        if (strlen($nombre) < 8) return null;
+        if (strlen($nombre) < 8) {
+            return null;
+        }
 
         // Parsear "V 32<teléfono>" o "M 19" o "V 3272345678"
-        $edad     = null;
+        $edad = null;
         $telefono = null;
 
         if ($resto) {
@@ -144,8 +152,8 @@ class ImportarMiembrosController extends Controller
 
         return [
             'nombre_completo' => $nombre,
-            'edad'            => $edad,
-            'telefono'        => $telefono,
+            'edad' => $edad,
+            'telefono' => $telefono,
         ];
     }
 
@@ -157,19 +165,25 @@ class ImportarMiembrosController extends Controller
     private function limpiarTelefono(string $tel): ?string
     {
         $tel = trim($tel);
-        if (preg_match('/^[\s\-\.]+$/', $tel) || strlen($tel) < 5) return null;
+        if (preg_match('/^[\s\-\.]+$/', $tel) || strlen($tel) < 5) {
+            return null;
+        }
+
         return $tel ?: null;
     }
 
     private function esEncabezado(string $texto): bool
     {
         $palabras = ['nombre', 'apellido', 'telefono', 'teléfono', 'sexo', 'edad',
-                     'lista de', 'barrio', 'estaca', 'iglesia', 'reservados',
-                     'personas seleccionadas', 'uso exclusivo'];
+            'lista de', 'barrio', 'estaca', 'iglesia', 'reservados',
+            'personas seleccionadas', 'uso exclusivo'];
         $lower = strtolower($texto);
         foreach ($palabras as $p) {
-            if (str_contains($lower, $p)) return true;
+            if (str_contains($lower, $p)) {
+                return true;
+            }
         }
+
         return false;
     }
 }

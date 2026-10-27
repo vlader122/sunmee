@@ -25,6 +25,7 @@ class Message extends Model
         if ($this->discursante) {
             return $this->discursante->nombre_completo;
         }
+
         return $this->discursante_nombre;
     }
 

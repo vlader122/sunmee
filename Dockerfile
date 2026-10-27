@@ -4,7 +4,7 @@ FROM composer:latest AS composer_stage
 # ==========================================
 # ETAPA 1: Compilar assets de Vue (Frontend)
 # ==========================================
-FROM node:20-alpine AS node_builder
+FROM node:24-alpine AS node_builder
 WORKDIR /app
 
 COPY package*.json ./

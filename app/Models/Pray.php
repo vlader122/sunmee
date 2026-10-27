@@ -19,6 +19,7 @@ class Pray extends Model
         if ($this->miembro) {
             return $this->miembro->nombre_completo;
         }
+
         return $this->orante_nombre;
     }
 

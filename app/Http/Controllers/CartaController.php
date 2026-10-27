@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Agenda;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class CartaController extends Controller
 {
@@ -35,7 +34,7 @@ class CartaController extends Controller
             'mensajes.discursante',
             'oraciones.miembro',
             'presidido',
-            'dirigido'
+            'dirigido',
         ])
             ->whereBetween('fecha', [$desde, $hasta])
             ->orderBy('fecha', 'asc')
@@ -49,7 +48,7 @@ class CartaController extends Controller
                 $nombre = $mensaje->discursante?->nombre_completo ?? $mensaje->discursante_nombre;
                 if ($nombre) {
                     $asignaciones[] = [
-                        'id' => 'msg_' . $mensaje->id,
+                        'id' => 'msg_'.$mensaje->id,
                         'fecha' => $agenda->fecha,
                         'fecha_formateada' => $this->formatearFecha($agenda->fecha),
                         'tipo' => 'Discurso',
@@ -67,7 +66,7 @@ class CartaController extends Controller
                 if ($nombre) {
                     $tipoOracion = $this->getTipoOracion($oracion->tipo);
                     $asignaciones[] = [
-                        'id' => 'pray_' . $oracion->id,
+                        'id' => 'pray_'.$oracion->id,
                         'fecha' => $agenda->fecha,
                         'fecha_formateada' => $this->formatearFecha($agenda->fecha),
                         'tipo' => $tipoOracion,
@@ -117,6 +116,7 @@ class CartaController extends Controller
 
         // Para descarga
         $fecha = date('Y-m-d');
+
         return $pdf->download("cartas-asignacion-{$fecha}.pdf");
     }
 
@@ -144,6 +144,7 @@ class CartaController extends Controller
         $pdf->setPaper('letter', 'portrait');
 
         $fecha = date('Y-m-d-His');
+
         return $pdf->download("cartas-asignacion-{$fecha}.pdf");
     }
 
@@ -154,6 +155,7 @@ class CartaController extends Controller
     {
         setlocale(LC_TIME, 'es_ES.UTF-8', 'es_ES', 'Spanish');
         $date = new \DateTime($fecha);
+
         return strftime('%A, %d de %B de %Y', $date->getTimestamp());
     }
 
@@ -178,7 +180,7 @@ class CartaController extends Controller
         if (empty($tipo)) {
             return 'Oración';
         }
-        
+
         return match (strtolower($tipo)) {
             'apertura', 'primera', 'invocacion', 'invocación' => 'Oración de Apertura',
             'cierre', 'ultima', 'última', 'bendicion', 'bendición' => 'Oración de Cierre',

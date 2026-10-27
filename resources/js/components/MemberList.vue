@@ -664,7 +664,7 @@ async function loadMembers() {
 
         // Cargar participaciones en segundo plano
         loadParticipations();
-    } catch (error) {
+    } catch {
         toast.add({
             severity: 'error',
             summary: 'Error',
@@ -828,7 +828,7 @@ async function saveMember() {
             });
         }
         closeMemberDialog();
-    } catch (error) {
+    } catch {
         toast.add({
             severity: 'error',
             summary: 'Error',
@@ -864,7 +864,7 @@ async function deleteMember(member) {
             detail: 'Miembro eliminado correctamente',
             life: 3000
         });
-    } catch (error) {
+    } catch {
         toast.add({
             severity: 'error',
             summary: 'Error',
