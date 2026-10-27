@@ -538,7 +538,7 @@ async function cargarAgendas(page = 1) {
         agendas.value = data.data || [];
         totalRecords.value = data.total || 0;
         perPage.value = data.per_page || 20;
-    } catch (error) {
+    } catch {
         toast.add({
             severity: 'error',
             summary: 'Error',
@@ -637,7 +637,7 @@ async function verDetalle(agenda) {
         const data = await get(`/api/agendas/${agenda.id}`);
         selectedAgenda.value = data;
         showDetailDialog.value = true;
-    } catch (error) {
+    } catch {
         toast.add({
             severity: 'error',
             summary: 'Error',

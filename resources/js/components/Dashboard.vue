@@ -131,10 +131,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { useToast } from 'primevue/usetoast';
 import AppLayout from './layout/AppLayout.vue';
-
-const toast = useToast();
 
 const stats = ref({
     totalMiembros: 0,
@@ -178,7 +175,7 @@ async function cargarDatos() {
             .sort((a, b) => new Date(a.fecha) - new Date(b.fecha))[0];
 
         loadingAgendas.value = false;
-    } catch (error) {
+    } catch {
         loadingAgendas.value = false;
     }
 }

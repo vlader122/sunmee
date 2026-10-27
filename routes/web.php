@@ -15,6 +15,7 @@ Route::get('/pin', function () {
     if (session('pin_verified')) {
         return redirect('/dashboard');
     }
+
     return view('pin');
 })->name('pin.show');
 
@@ -23,6 +24,7 @@ Route::post('/pin/verify', function (Request $request) {
 
     if ($request->pin === config('app.pin')) {
         session(['pin_verified' => true]);
+
         return redirect(session('intended', '/dashboard'));
     }
 
@@ -31,6 +33,7 @@ Route::post('/pin/verify', function (Request $request) {
 
 Route::get('/pin/logout', function () {
     session()->forget('pin_verified');
+
     return redirect()->route('pin.show');
 })->name('pin.logout');
 
@@ -56,7 +59,6 @@ Route::middleware('pin')->group(function () {
 
     // WhatsApp Configuration
     Route::get('/whatsapp/config', [WhatsAppController::class, 'config']);
-
 
     // Cartas de Asignación
     Route::get('/cartas/generar', [CartaController::class, 'index']);

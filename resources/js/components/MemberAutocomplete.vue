@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 import { useApi } from '@/composables/useApi';
 
 const props = defineProps({

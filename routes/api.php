@@ -5,7 +5,6 @@ use App\Http\Controllers\HimnController;
 use App\Http\Controllers\ImportarMiembrosController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\WhatsAppController;
-use App\Models\Himn;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,8 +12,8 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('himnos',[HimnController::class, 'index'] );
-Route::get('himnos/{id}',[HimnController::class, 'show'] );
+Route::get('himnos', [HimnController::class, 'index']);
+Route::get('himnos/{id}', [HimnController::class, 'show']);
 Route::get('miembros', [MemberController::class, 'buscar']);
 Route::get('miembros/list', [MemberController::class, 'list']);
 Route::get('miembros/sugerencias', [MemberController::class, 'sugerencias']);

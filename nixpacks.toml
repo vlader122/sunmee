@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["nodejs_20", "npm"]
+nixPkgs = ["nodejs_24", "npm"]
 
 [phases.install]
 cmds = ["composer install --no-dev --optimize-autoloader", "npm install"]

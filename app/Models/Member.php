@@ -22,7 +22,7 @@ class Member extends Model
     protected static function booted(): void
     {
         static::saving(function (Member $member) {
-            if ($member->isDirty('telefono') && !empty($member->telefono)) {
+            if ($member->isDirty('telefono') && ! empty($member->telefono)) {
                 $member->telefono_updated_at = now();
             }
         });

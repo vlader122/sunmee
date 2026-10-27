@@ -5,22 +5,23 @@ namespace App\Http\Controllers;
 use App\Models\Agenda;
 use App\Models\Setting;
 use App\Services\EvolutionApiService;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class WhatsAppController extends Controller
 {
     public function config()
     {
         $config = Setting::getWhatsAppConfig();
+
         return view('whatsapp.config', compact('config'));
     }
 
     public function status()
     {
-        $service = new EvolutionApiService();
+        $service = new EvolutionApiService;
 
-        if (!$service->isConfigured()) {
+        if (! $service->isConfigured()) {
             return response()->json([
                 'configured' => false,
                 'connected' => false,
@@ -52,7 +53,7 @@ class WhatsAppController extends Controller
         Setting::set('evolution_api_key', $request->api_key);
         Setting::set('evolution_instance_name', $request->instance_name);
 
-        $service = new EvolutionApiService();
+        $service = new EvolutionApiService;
         $status = $service->checkConnection();
 
         return response()->json([
@@ -64,7 +65,7 @@ class WhatsAppController extends Controller
 
     public function testConnection()
     {
-        $service = new EvolutionApiService();
+        $service = new EvolutionApiService;
         $status = $service->checkConnection();
 
         return response()->json($status);
@@ -74,12 +75,12 @@ class WhatsAppController extends Controller
     {
         $agenda = Agenda::with([
             'mensajes.discursante',
-            'oraciones.miembro'
+            'oraciones.miembro',
         ])->findOrFail($agendaId);
 
-        $service = new EvolutionApiService();
+        $service = new EvolutionApiService;
 
-        if (!$service->isConfigured()) {
+        if (! $service->isConfigured()) {
             return response()->json([
                 'success' => false,
                 'message' => 'WhatsApp no configurado',
@@ -87,7 +88,7 @@ class WhatsAppController extends Controller
         }
 
         $status = $service->getInstanceStatus();
-        if (!$status['connected']) {
+        if (! $status['connected']) {
             return response()->json([
                 'success' => false,
                 'message' => 'WhatsApp no está conectado',
@@ -102,12 +103,13 @@ class WhatsAppController extends Controller
         ];
 
         foreach ($agenda->mensajes as $mensaje) {
-            if (!$mensaje->discursante || !$mensaje->discursante->telefono) {
+            if (! $mensaje->discursante || ! $mensaje->discursante->telefono) {
                 $results['skipped'][] = [
                     'tipo' => 'discurso',
                     'nombre' => $mensaje->discursante?->nombre_completo ?? 'Sin asignar',
                     'reason' => 'Sin teléfono',
                 ];
+
                 continue;
             }
 
@@ -125,7 +127,7 @@ class WhatsAppController extends Controller
             $text .= "Si existiera algún inconveniente, por favor notifique al secretario de barrio al menos 3 días antes de la reunión.\n\n";
             $text .= "Rogamos que el Señor le prepare y fortalezca para hacer de esta reunión una experiencia espiritual para todos.\n\n";
             $text .= "Atentamente,\n";
-            $text .= "_El Obispado_";
+            $text .= '_El Obispado_';
 
             $result = $service->sendTextMessage($mensaje->discursante->telefono, $text);
 
@@ -144,12 +146,13 @@ class WhatsAppController extends Controller
         }
 
         foreach ($agenda->oraciones as $oracion) {
-            if (!$oracion->miembro || !$oracion->miembro->telefono) {
+            if (! $oracion->miembro || ! $oracion->miembro->telefono) {
                 $results['skipped'][] = [
                     'tipo' => 'oracion',
                     'nombre' => $oracion->miembro?->nombre_completo ?? $oracion->orante_nombre ?? 'Sin asignar',
                     'reason' => 'Sin teléfono',
                 ];
+
                 continue;
             }
 
@@ -165,7 +168,7 @@ class WhatsAppController extends Controller
             $text .= "Se requiere que esté con 10 minutos de anticipación.\n\n";
             $text .= "Si existiera algún inconveniente, por favor notifique al secretario de barrio al menos 3 días antes de la reunión.\n\n";
             $text .= "Atentamente,\n";
-            $text .= "_El Obispado_";
+            $text .= '_El Obispado_';
 
             $result = $service->sendTextMessage($oracion->miembro->telefono, $text);
 

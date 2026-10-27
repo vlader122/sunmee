@@ -1057,7 +1057,7 @@ async function cargarAgenda() {
                 }
             });
         }
-    } catch (error) {
+    } catch {
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la agenda', life: 5000 });
     } finally {
         loadingData.value = false;

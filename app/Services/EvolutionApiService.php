@@ -9,7 +9,9 @@ use Illuminate\Support\Facades\Log;
 class EvolutionApiService
 {
     protected ?string $apiUrl;
+
     protected ?string $apiKey;
+
     protected ?string $instanceName;
 
     public function __construct()
@@ -22,14 +24,14 @@ class EvolutionApiService
 
     public function isConfigured(): bool
     {
-        return !empty($this->apiUrl)
-            && !empty($this->apiKey)
-            && !empty($this->instanceName);
+        return ! empty($this->apiUrl)
+            && ! empty($this->apiKey)
+            && ! empty($this->instanceName);
     }
 
     public function getInstanceStatus(): array
     {
-        if (!$this->isConfigured()) {
+        if (! $this->isConfigured()) {
             return [
                 'connected' => false,
                 'message' => 'WhatsApp no configurado',
@@ -57,10 +59,11 @@ class EvolutionApiService
                 'message' => 'Error al verificar estado',
             ];
         } catch (\Exception $e) {
-            Log::error('Evolution API Error: ' . $e->getMessage());
+            Log::error('Evolution API Error: '.$e->getMessage());
+
             return [
                 'connected' => false,
-                'message' => 'Error de conexión: ' . $e->getMessage(),
+                'message' => 'Error de conexión: '.$e->getMessage(),
             ];
         }
     }
@@ -72,7 +75,7 @@ class EvolutionApiService
 
     public function sendTextMessage(string $phone, string $message): array
     {
-        if (!$this->isConfigured()) {
+        if (! $this->isConfigured()) {
             return [
                 'success' => false,
                 'message' => 'WhatsApp no configurado',
@@ -100,13 +103,14 @@ class EvolutionApiService
 
             return [
                 'success' => false,
-                'message' => 'Error al enviar: ' . $response->body(),
+                'message' => 'Error al enviar: '.$response->body(),
             ];
         } catch (\Exception $e) {
-            Log::error('Evolution API Send Error: ' . $e->getMessage());
+            Log::error('Evolution API Send Error: '.$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage(),
+                'message' => 'Error: '.$e->getMessage(),
             ];
         }
     }
@@ -116,7 +120,7 @@ class EvolutionApiService
         $phone = preg_replace('/[^0-9]/', '', $phone);
 
         if (strlen($phone) === 10) {
-            $phone = '52' . $phone;
+            $phone = '52'.$phone;
         }
 
         return $phone;

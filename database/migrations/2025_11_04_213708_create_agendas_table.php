@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreignId('presidido_por_id')->nullable()->constrained('members');
             $table->foreignId('dirigido_por_id')->nullable()->constrained('members');
             $table->foreignId('pianista_id')->nullable()->constrained('members');
-            
+
             // Esta no es nula
             $table->foreignId('director_himno_id')->constrained('members');
             $table->timestamps();

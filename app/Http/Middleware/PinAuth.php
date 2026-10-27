@@ -10,7 +10,7 @@ class PinAuth
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!session('pin_verified')) {
+        if (! session('pin_verified')) {
             return redirect()->route('pin.show')->with('intended', $request->url());
         }
 

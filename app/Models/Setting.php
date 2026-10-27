@@ -11,6 +11,7 @@ class Setting extends Model
     public static function get(string $key, $default = null): ?string
     {
         $setting = static::where('key', $key)->first();
+
         return $setting ? $setting->value : $default;
     }
 
@@ -34,8 +35,9 @@ class Setting extends Model
     public static function isWhatsAppConfigured(): bool
     {
         $config = static::getWhatsAppConfig();
-        return !empty($config['api_url'])
-            && !empty($config['api_key'])
-            && !empty($config['instance_name']);
+
+        return ! empty($config['api_url'])
+            && ! empty($config['api_key'])
+            && ! empty($config['instance_name']);
     }
 }
